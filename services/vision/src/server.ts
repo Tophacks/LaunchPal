@@ -2,6 +2,7 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import http from "node:http";
 import { MAX_IMAGE_BYTES, type Config } from "./config.js";
 import { HttpError } from "./errors.js";
+import type { GuideStore } from "./guides.js";
 import { inspect } from "./inspect.js";
 import type { ModelClient } from "./model.js";
 
@@ -36,8 +37,8 @@ async function readBody(req: http.IncomingMessage): Promise<unknown> {
   }
 }
 
-export function createServer(opts: { config: Pick<Config, "inspectToken" | "openaiTimeoutMs" | "maxImageBytes" | "openaiModel">; model: ModelClient; guide: string }) {
-  const { config, model, guide } = opts;
+export function createServer(opts: { config: Pick<Config, "inspectToken" | "openaiTimeoutMs" | "maxImageBytes" | "openaiModel">; model: ModelClient; guides: GuideStore }) {
+  const { config, model, guides } = opts;
   return http.createServer(async (req, res) => {
     const started = Date.now();
     const requestId = randomUUID();
@@ -52,7 +53,7 @@ export function createServer(opts: { config: Pick<Config, "inspectToken" | "open
       if (!/^application\/json/i.test(req.headers["content-type"] ?? "")) throw new HttpError(415, "unsupported_media_type", "Use application/json.");
       const body = await readBody(req);
       frameId = typeof (body as { frameId?: unknown })?.frameId === "string" ? (body as { frameId: string }).frameId : undefined;
-      const out = await inspect(body, { model, guide, timeoutMs: config.openaiTimeoutMs, maxImageBytes: config.maxImageBytes });
+      const out = await inspect(body, { model, guides, timeoutMs: config.openaiTimeoutMs, maxImageBytes: config.maxImageBytes });
       send(res, 200, out);
     } catch (e) {
       const err = e instanceof HttpError ? e : new HttpError(500, "internal_error", "Internal error.");

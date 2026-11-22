@@ -30,6 +30,6 @@ All labels below are exact, as they appear on screen.
 - A spinner, a "Connecting…" message, or the permission dialog still showing is NOT success.
 
 ## Out of scope
-Any screen that is not one of the three above (other apps, desktop, a partial/cropped view where the
+Any screen that is not one of the three above (other apps, desktop, setup window hidden, minimized or partly off-screen, a partial view where the
 primary control or success evidence is not fully visible) is `unclear`. Ask the customer for one
-specific action, e.g. "Please open the Acme Sync setup page and share that window."
+specific action, e.g. "Please bring the Acme Sync setup window to the front."

@@ -4,6 +4,8 @@ export const InspectRequest = z.object({
   frameId: z.string().min(1).max(200),
   imageDataUrl: z.string().min(1),
   question: z.string().trim().min(1).max(1000),
+  /** Optional (additive): which published guide to use. Default guide when absent. */
+  guideId: z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/).optional(),
 });
 export type InspectRequest = z.infer<typeof InspectRequest>;
 

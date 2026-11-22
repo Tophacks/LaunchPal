@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsx --test test/*.test.ts",
     "fixtures": "tsx scripts/render-fixtures.ts",
+    "fixtures:screen": "tsx scripts/render-screen-fixtures.ts",
     "verify": "tsx --env-file-if-exists=.env scripts/verify-fixtures.ts"
   },
   "dependencies": {
