@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LaunchPal Walkthrough</title>
+<style>
+  :root {
+    --bg: #0b0912;
+    --desk1: #1d3557;
+    --desk2: #2a6f97;
+    --lp-bg: #15111f;
+    --lp-card: #1f1930;
+    --lp-text: #f2effa;
+    --lp-muted: #b3abc9;
+    --lp-border: #3a3150;
+    --lp-accent: #8b66ff;
+    --ring: #ff3d7f;
+    --good: #6fe0a8;
+    --good-bg: #173a2a;
+    --warn: #ffc27a;
+    --warn-bg: #3d2a12;
+    --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--lp-text); font-family: var(--font); overflow: hidden; }
+
+  #viewport { position: fixed; inset: 0; display: grid; place-items: center; }
+  #stage {
+    position: relative; width: 1600px; height: 900px; transform-origin: center center;
+    background: linear-gradient(135deg, var(--desk1), var(--desk2)); overflow: hidden; border-radius: 6px;
+  }
+
+  /* ---------- generic windows ---------- */
+  .win { position: absolute; background: #fff; color: #111; border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.45); overflow: hidden; transition: opacity .4s, transform .4s; }
+  .win.hidden { opacity: 0; transform: scale(.97); pointer-events: none; }
+  .chrome-bar { height: 44px; background: #202124; display: flex; align-items: center; gap: 10px; padding: 0 14px; }
+  .dots span { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; background: #5f6368; }
+  .url { flex: 1; height: 28px; border-radius: 14px; background: #35363a; color: #e8eaed; font-size: 14px; display: flex; align-items: center; padding: 0 14px; }
+  .dl-icon { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #e8eaed; font-size: 16px; }
+
+  /* ---------- founder screen (our real /founder UI) ---------- */
+  #founder { left: 160px; top: 60px; width: 1280px; height: 760px; background: var(--lp-bg); }
+  #founder .page { color: var(--lp-text); padding: 26px 0; width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+  .brand { display: flex; gap: 12px; align-items: center; }
+  .logo { font-size: 28px; color: var(--ring); line-height: 1; }
+  .brand h1 { margin: 0; font-size: 20px; }
+  .sub { margin: 2px 0 0; color: var(--lp-muted); font-size: 13px; }
+  .card { background: var(--lp-card); border: 1px solid var(--lp-border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .label { font-weight: 600; font-size: 14px; }
+  .input, .textarea { background: var(--lp-bg); border: 1px solid var(--lp-border); border-radius: 8px; padding: 10px 12px; font-size: 14px; color: var(--lp-text); min-height: 40px; }
+  .textarea { height: 230px; font-family: Consolas, ui-monospace, monospace; font-size: 12px; white-space: pre-wrap; overflow: hidden; color: #d9d3ee; }
+  .row { display: flex; justify-content: space-between; align-items: center; }
+  .btn { border-radius: 10px; border: 1px solid var(--lp-border); background: var(--lp-card); color: var(--lp-text); padding: 10px 14px; font-size: 14px; text-align: center; }
+  .btn.small { font-size: 12px; padding: 6px 10px; }
+  .btn.primary { background: var(--lp-accent); border-color: var(--lp-accent); color: #fff; font-weight: 600; }
+  .btn.stop { border-color: #ff8aa5; color: #ff8aa5; font-weight: 600; }
+  .muted { color: var(--lp-muted); font-size: 13px; margin: 0; }
+  .status { padding: 11px 14px; border-radius: 10px; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 10px; background: #2a2340; }
+  .status .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--lp-muted); }
+  .status.busy .dot { background: var(--lp-accent); animation: blink 1s infinite; }
+  .status.good { background: var(--good-bg); color: var(--good); }
+  .status.good .dot { background: var(--ring); }
+  .status.done { background: var(--good-bg); color: var(--good); }
+  .status.done .dot { background: var(--good); }
+  .status.warn { background: var(--warn-bg); color: var(--warn); }
+  .status.warn .dot { background: var(--warn); }
+  .code { background: var(--lp-bg); border: 1px solid var(--lp-border); border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: Consolas, monospace; }
+  #published { display: none; }
+
+  /* ---------- python.org-style page (illustration, no logos) ---------- */
+  #browser { left: 70px; top: 40px; width: 1100px; height: 760px; }
+  #pyorg { position: absolute; inset: 44px 0 0 0; background: #2b5b84; color: #fff; }
+  .py-nav { height: 52px; background: #1f3e5b; display: flex; gap: 34px; align-items: center; padding: 0 70px; font-size: 16px; color: #cfe0ee; }
+  .py-hero { padding: 60px 120px; }
+  .py-hero h2 { margin: 0 0 26px; font-size: 38px; color: #ffd343; }
+  .py-yellow { display: inline-block; background: #ffd343; color: #2b2b2b; padding: 14px 20px; border-radius: 6px; font-size: 19px; border: 1px solid #c9a723; }
+  .py-line { margin: 22px 0 0; font-size: 19px; color: #e9f1f8; }
+  .py-link { color: #ffd343; text-decoration: underline; }
+  .py-small { margin-top: 12px; font-size: 16px; color: #c8d8e6; }
+  .dl-bubble { position: absolute; right: 16px; top: 52px; width: 330px; background: #2d2e31; color: #e8eaed; border-radius: 10px; padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.4); display: none; }
+  .dl-item { display: flex; gap: 12px; align-items: center; padding: 10px; border-radius: 8px; background: #3c4043; }
+  .dl-item .ic { width: 30px; height: 30px; border-radius: 6px; background: #4a90d9; display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+
+  /* ---------- installer (illustration) ---------- */
+  #installer { left: 330px; top: 170px; width: 760px; height: 520px; background: #fff; }
+  .ins-title { height: 36px; background: #0b5cad; color: #fff; display: flex; align-items: center; padding: 0 14px; font-size: 14px; }
+  .ins-body { display: flex; height: calc(100% - 36px); }
+  .ins-side { width: 200px; background: linear-gradient(180deg, #dde7f1, #f4f7fa); display: grid; place-items: end center; padding-bottom: 30px; color: #3b4b5a; font-size: 26px; font-weight: 300; }
+  .ins-main { flex: 1; padding: 26px 30px; position: relative; color: #1a1a1a; }
+  .ins-main h3 { margin: 0 0 8px; font-size: 24px; font-weight: 400; }
+  .ins-opt { margin-top: 22px; padding: 12px 14px; border: 1px solid transparent; border-radius: 4px; }
+  .ins-opt b { color: #0b5cad; font-size: 18px; font-weight: 500; }
+  .ins-opt div { font-size: 13px; color: #555; margin-top: 3px; }
+  .ins-checks { position: absolute; left: 30px; bottom: 26px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+  .chk { display: flex; align-items: center; gap: 8px; }
+  .box { width: 16px; height: 16px; border: 1.5px solid #555; border-radius: 2px; display: grid; place-items: center; font-size: 12px; color: #fff; }
+  .box.on { background: #0b5cad; border-color: #0b5cad; }
+  .ins-cancel { position: absolute; right: 26px; bottom: 22px; border: 1px solid #aaa; padding: 6px 22px; font-size: 14px; border-radius: 3px; }
+  .progress { height: 22px; border: 1px solid #bbb; margin-top: 18px; }
+  .progress i { display: block; height: 100%; width: 0; background: #12a33a; transition: width 5.5s linear; }
+
+  /* ---------- UAC ---------- */
+  #uac { position: absolute; inset: 0; background: rgba(0,0,0,.72); display: none; place-items: center; z-index: 30; }
+  .uac-box { width: 460px; background: #1f1f1f; color: #fff; border-radius: 8px; padding: 22px; border-top: 6px solid #0b5cad; }
+  .uac-box h4 { margin: 0 0 10px; font-size: 20px; font-weight: 500; }
+  .uac-btns { display: flex; gap: 10px; margin-top: 22px; }
+  .uac-btns span { flex: 1; text-align: center; padding: 9px; border-radius: 4px; background: #3a3a3a; }
+  .uac-btns .yes { background: #0b5cad; }
+
+  /* ---------- LaunchPal helper panel (our real control window) ---------- */
+  #panel { left: 1215px; top: 300px; width: 360px; height: 570px; background: var(--lp-bg); color: var(--lp-text); z-index: 20; }
+  #panel .titlebar { height: 32px; background: #241d35; display: flex; align-items: center; padding: 0 12px; font-size: 12px; color: var(--lp-muted); }
+  #panel .content { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .instr { background: var(--lp-card); border: 1px solid var(--lp-border); border-radius: 10px; padding: 11px 13px; font-size: 15px; line-height: 1.35; min-height: 46px; }
+  .badge { font-size: 10px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--lp-border); color: var(--lp-muted); }
+  .voice { border: 1px dashed var(--lp-border); border-radius: 10px; padding: 11px 13px; display: flex; flex-direction: column; gap: 6px; }
+  .voice-state { font-weight: 600; font-size: 14px; display: flex; gap: 8px; align-items: center; }
+  .eq { display: inline-flex; gap: 2px; align-items: end; height: 14px; }
+  .eq i { width: 3px; background: var(--ring); border-radius: 2px; animation: eq .7s infinite ease-in-out; }
+  .eq i:nth-child(2) { animation-delay: .15s } .eq i:nth-child(3) { animation-delay: .3s } .eq i:nth-child(4) { animation-delay: .45s }
+
+  /* ---------- ring overlay (our real overlay look) ---------- */
+  #ring { position: absolute; border: 4px solid var(--ring); border-radius: 12px; box-shadow: 0 0 0 1.5px rgba(0,0,0,.55), inset 0 0 0 1.5px rgba(0,0,0,.45); z-index: 25; display: none; transition: left .35s, top .35s, width .35s, height .35s; pointer-events: none; }
+  #ring::after { content: ""; position: absolute; inset: -4px; border-radius: 14px; border: 3px solid var(--ring); animation: pulse 1.4s ease-out infinite; }
+  #ringLabel { position: absolute; transform: translate(-50%, -100%); margin-top: -10px; background: #1b1030; color: #fff; border: 2px solid var(--ring); padding: 6px 12px; border-radius: 8px; font-size: 15px; font-weight: 600; white-space: nowrap; z-index: 26; display: none; }
+
+  /* ---------- cursor ---------- */
+  #cursor { position: absolute; left: 800px; top: 450px; width: 26px; height: 26px; z-index: 40; transition: left .7s cubic-bezier(.4,.1,.2,1), top .7s cubic-bezier(.4,.1,.2,1); pointer-events: none; }
+  .ripple { position: absolute; width: 14px; height: 14px; border-radius: 50%; border: 3px solid #fff; z-index: 39; transform: translate(-50%,-50%); animation: ripple .5s ease-out forwards; pointer-events: none; }
+
+  /* ---------- captions, voice bubble, pipeline ---------- */
+  #caption { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); max-width: 1180px; background: rgba(10,8,18,.88); color: #fff; padding: 14px 24px; border-radius: 14px; font-size: 22px; line-height: 1.35; text-align: center; z-index: 50; border: 1px solid rgba(255,255,255,.08); transition: opacity .3s; }
+  #caption small { display: block; font-size: 14px; color: #c9c2e0; margin-top: 4px; }
+  #chip { position: absolute; left: 22px; top: 20px; z-index: 50; padding: 8px 14px; border-radius: 999px; background: rgba(10,8,18,.85); font-size: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  #chip.founder { color: #ffd38a; } #chip.customer { color: #8fe3ff; }
+  #speech { position: absolute; z-index: 45; left: 1215px; top: 225px; width: 360px; background: #fff; color: #1b1030; border-radius: 14px; padding: 12px 14px; font-size: 15px; box-shadow: 0 10px 30px rgba(0,0,0,.35); display: none; }
+  #speech b { color: #c2185b; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; display: block; margin-bottom: 3px; }
+  #pipeline { position: absolute; left: 50%; top: 18px; transform: translateX(-50%); z-index: 46; display: none; gap: 8px; align-items: center; background: rgba(10,8,18,.88); padding: 10px 14px; border-radius: 12px; font-size: 13px; }
+  #pipeline span { padding: 5px 10px; border-radius: 8px; background: #2a2340; color: #d8d1ef; transition: background .2s, color .2s; }
+  #pipeline span.on { background: var(--lp-accent); color: #fff; }
+  #pipeline em { color: #776e93; font-style: normal; }
+
+  /* ---------- title / end cards ---------- */
+  .card-full { position: absolute; inset: 0; z-index: 60; background: radial-gradient(circle at 50% 40%, #241a3d, #0b0912 70%); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; padding: 40px; }
+  .card-full h1 { margin: 0; font-size: 64px; letter-spacing: -.01em; }
+  .card-full h1 span { color: var(--ring); }
+  .card-full p { margin: 0; font-size: 26px; color: #d4cdea; max-width: 1100px; }
+  .arch { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
+  .arch div { background: #1f1930; border: 1px solid #3a3150; border-radius: 12px; padding: 14px 16px; font-size: 17px; min-width: 170px; }
+  .arch div small { display: block; color: #a79fc2; font-size: 13px; margin-top: 4px; }
+  .arch em { color: var(--ring); font-style: normal; font-size: 24px; }
+  .tag { font-size: 14px; color: #8e86a8; }
+
+  /* ---------- controls ---------- */
+  #controls { position: fixed; right: 14px; bottom: 14px; display: flex; gap: 8px; z-index: 100; opacity: .25; transition: opacity .2s; }
+  #controls:hover { opacity: 1; }
+  #controls button { font: inherit; font-size: 13px; padding: 7px 12px; border-radius: 8px; border: 1px solid #3a3150; background: #1f1930; color: #f2effa; cursor: pointer; }
+  #bar { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--ring); width: 0; z-index: 100; transition: width .2s linear; }
+
+  @keyframes pulse { 0% { transform: scale(1); opacity: .85; } 100% { transform: scale(1.18); opacity: 0; } }
+  @keyframes blink { 50% { opacity: .35; } }
+  @keyframes ripple { from { width: 10px; height: 10px; opacity: 1; } to { width: 60px; height: 60px; opacity: 0; } }
+  @keyframes eq { 0%,100% { height: 3px; } 50% { height: 14px; } }
+  @media (prefers-reduced-motion: reduce) { #ring::after, .eq i, .status.busy .dot { animation: none; } }
+</style>
+</head>
+<body>
+<div id="viewport">
+  <div id="stage">
+
+    <!-- Founder screen (LaunchPal /founder) -->
+    <div class="win hidden" id="founder">
+      <div class="chrome-bar"><div class="dots"><span></span><span></span><span></span></div><div class="url">localhost:3000/founder</div></div>
+      <div class="page">
+        <div class="brand"><span class="logo">◎</span><div><h1>LaunchPal for founders</h1><p class="sub">Upload your setup guide. LaunchPal guides every customer through it on their own screen.</p></div></div>
+        <div class="card">
+          <div class="label">Product name</div>
+          <div class="input" id="fName"></div>
+          <p class="muted" id="fSlug">&nbsp;</p>
+          <div class="row"><div class="label">Setup guide</div><div style="display:flex;gap:8px"><span class="btn small" id="fUpload">Upload .md</span><span class="btn small">Use example: Python</span></div></div>
+          <div class="textarea" id="fGuide"></div>
+          <span class="btn primary" id="fPublish">Publish guide</span>
+        </div>
+        <div class="card" id="published">
+          <div class="status done"><span class="dot"></span>Published ✅ Python for Windows</div>
+          <p class="muted">Put this link on your download or help page:</p>
+          <div class="code">https://launchpal.app/help/python-for-windows</div>
+          <div style="display:flex;gap:8px"><span class="btn" id="fOpen">Open in LaunchPal helper</span><span class="btn">Preview customer page</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Browser with a python.org-style downloads page (illustration) -->
+    <div class="win hidden" id="browser">
+      <div class="chrome-bar"><div class="dots"><span></span><span></span><span></span></div><div class="url">python.org/downloads</div><div class="dl-icon" id="dlIcon">⤓</div></div>
+      <div id="pyorg">
+        <div class="py-nav"><span>About</span><span>Downloads</span><span>Documentation</span><span>Community</span><span>News</span></div>
+        <div class="py-hero">
+          <h2>Download the latest version for Windows</h2>
+          <span class="py-yellow" id="pyYellow">Download Python install manager</span>
+          <p class="py-line">Or get the standalone installer for <span class="py-link" id="pyLink">Python 3.15.2</span></p>
+          <p class="py-small">Looking for Python with a different OS? Python for Windows, Linux/Unix, macOS, Android, iOS, other</p>
+          <p class="py-small">Want to help test development versions? Pre-releases, Docker images</p>
+        </div>
+        <div class="dl-bubble" id="dlBubble">
+          <div style="font-size:13px;margin-bottom:8px;color:#bdc1c6">Recent download history</div>
+          <div class="dl-item" id="dlItem"><span class="ic">PY</span><div><div style="font-size:14px">python-3.15.2-amd64.exe</div><div style="font-size:12px;color:#9aa0a6">27.8 MB • Done</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Python installer (illustration) -->
+    <div class="win hidden" id="installer">
+      <div class="ins-title">Python 3.15.2 (64-bit) Setup</div>
+      <div class="ins-body">
+        <div class="ins-side">python<br/>for windows</div>
+        <div class="ins-main" id="insStart">
+          <h3>Install Python 3.15.2 (64-bit)</h3>
+          <div style="font-size:14px;color:#444">Select Install Now to install Python with default settings, or choose Customize to enable or disable features.</div>
+          <div class="ins-opt" id="insNow"><b>→ Install Now</b><div>C:\Users\you\AppData\Local\Programs\Python\Python315</div><div>Includes IDLE, pip and documentation</div></div>
+          <div class="ins-opt"><b>→ Customize installation</b><div>Choose location and features</div></div>
+          <div class="ins-checks">
+            <div class="chk"><span class="box on">✓</span>Use admin privileges when installing py.exe</div>
+            <div class="chk" id="insPath"><span class="box" id="pathBox"></span>Add python.exe to PATH</div>
+          </div>
+          <span class="ins-cancel">Cancel</span>
+        </div>
+        <div class="ins-main" id="insProgress" style="display:none">
+          <h3>Setup Progress</h3>
+          <div style="margin-top:60px;font-size:14px">Installing:</div>
+          <div style="font-size:15px;margin-top:6px" id="insComp">Python 3.15.2 Core Interpreter (64-bit)</div>
+          <div class="progress"><i id="bar2"></i></div>
+          <span class="ins-cancel">Cancel</span>
+        </div>
+        <div class="ins-main" id="insDone" style="display:none">
+          <h3 id="insSuccess">Setup was successful</h3>
+          <div style="font-size:14px;color:#444;margin-top:14px">New to Python? Start with the online tutorial and documentation.</div>
+          <div class="ins-opt"><b>Disable path length limit</b><div>Changes your machine configuration to allow programs to use paths longer than 260 characters.</div></div>
+          <span class="ins-cancel" id="insClose">Close</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Windows permission prompt (illustration) -->
+    <div id="uac"><div class="uac-box"><h4>Do you want to allow this app to make changes to your device?</h4><div style="color:#ccc;font-size:14px">Python 3.15.2 (64-bit)<br/>Verified publisher: Python Software Foundation</div><div class="uac-btns"><span class="yes" id="uacYes">Yes</span><span>No</span></div></div></div>
+
+    <!-- LaunchPal helper control window -->
+    <div class="win hidden" id="panel">
+      <div class="titlebar">LaunchPal</div>
+      <div class="content">
+        <div class="row"><div class="brand"><span class="logo" style="font-size:24px">◎</span><div><div style="font-weight:700;font-size:17px">LaunchPal</div><div class="sub">Setup help for Python for Windows</div></div></div><span class="badge">DESKTOP</span></div>
+        <div class="status" id="pStatus"><span class="dot"></span><span id="pStatusText">Ready</span></div>
+        <div class="instr" id="pInstr" style="display:none"></div>
+        <span class="btn" id="pStop" style="display:none">Stop</span>
+        <span class="btn primary" id="pStart">Start guided setup</span>
+        <span class="btn">Ask: Where do I click?</span>
+        <div class="voice"><div style="font-weight:600;font-size:13px">Voice assistant</div><div class="voice-state" id="pVoice">Talk to LaunchPal and it walks you through each step out loud.</div><span class="btn small" id="pTalk">Talk</span></div>
+      </div>
+    </div>
+
+    <div id="ring"></div><div id="ringLabel"></div>
+    <div id="speech"><b>LaunchPal voice</b><span id="speechText"></span></div>
+    <div id="pipeline"><span id="pp1">Screen captured</span><em>→</em><span id="pp2">LaunchPal server</span><em>→</em><span id="pp3">Vision service + OpenAI</span><em>→</em><span id="pp4">Ring + voice</span></div>
+    <div id="chip"></div>
+    <div id="caption" style="opacity:0"></div>
+
+    <svg id="cursor" viewBox="0 0 24 24"><path d="M3 2l7.5 19 2.6-7.9L21 10.5z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg>
+
+    <div class="card-full" id="titleCard">
+      <h1>Launch<span>Pal</span></h1>
+      <p>Founders upload their setup guide once. Customers get a ring around the right button on their own screen, and a voice that says what to do.</p>
+      <p class="tag">Walkthrough: installing Python on Windows · illustration of the real LaunchPal flow</p>
+    </div>
+    <div class="card-full" id="endCard">
+      <h1>Setup done. <span>No support ticket.</span></h1>
+      <div class="arch">
+        <div>Founder guide<small>/founder · publish</small></div><em>→</em>
+        <div>Desktop helper<small>Electron · captures screen</small></div><em>→</em>
+        <div>LaunchPal server<small>Wasp · /api/inspect</small></div><em>→</em>
+        <div>Vision service<small>Render · OpenAI</small></div><em>→</em>
+        <div>Ring + voice<small>overlay · ElevenLabs</small></div>
+      </div>
+      <p style="font-size:22px">The customer does every click. LaunchPal never controls the computer.</p>
+      <p class="tag">Screens of python.org and the Python installer are re-created for illustration.</p>
+    </div>
+  </div>
+</div>
+
+<div id="controls"><button id="bPlay">Pause</button><button id="bRestart">Restart</button></div>
+<div id="bar"></div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const stage = $("stage");
+  const GUIDE = `# Setup guide: Python for Windows (python.org installer)
+
+Goal: the customer installs Python so that \`python\` works in a terminal.
+
+### 1. python.org download page
+Click the small link "Python 3.x.x" under the yellow button.
+Do NOT point at "Download Python install manager".
+
+### 2. Download finished
+Open python-3.x.x-amd64.exe from the browser's downloads.
+
+### 3. Installer start screen (THE BLOCKER)
+If "Add python.exe to PATH" is not checked: check it.
+Then click "Install Now".
+
+### 4. Windows permission prompt -> click "Yes".
+### 5. "Setup Progress" -> please wait.
+### 6. Success evidence: "Setup was successful".`;
+
+  // ---------- scaling ----------
+  let scale = 1;
+  function fit() {
+    scale = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+    stage.style.transform = `scale(${scale})`;
+  }
+  window.addEventListener("resize", fit); fit();
+
+  // ---------- timing with pause/restart ----------
+  let paused = false, gen = 0;
+  const TOTAL = 96000; let elapsed = 0, lastTick = performance.now();
+  setInterval(() => { const now = performance.now(); if (!paused) elapsed += now - lastTick; lastTick = now; $("bar").style.width = Math.min(100, elapsed / TOTAL * 100) + "%"; }, 200);
+  function sleep(ms, g) {
+    return new Promise((res, rej) => {
+      let left = ms, last = performance.now();
+      const t = setInterval(() => {
+        if (g !== gen) { clearInterval(t); rej(new Error("restart")); return; }
+        const now = performance.now(); if (!paused) left -= now - last; last = now;
+        if (left <= 0) { clearInterval(t); res(); }
+      }, 30);
+    });
+  }
+
+  // ---------- helpers ----------
+  const show = (id, on = true) => $(id).classList.toggle("hidden", !on);
+  function rel(el) {
+    const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect();
+    return { x: (r.left - s.left) / scale, y: (r.top - s.top) / scale, w: r.width / scale, h: r.height / scale };
+  }
+  function caption(text, small) { const c = $("caption"); c.innerHTML = text + (small ? `<small>${small}</small>` : ""); c.style.opacity = 1; }
+  function chip(kind) { const c = $("chip"); c.className = kind; c.textContent = kind === "founder" ? "Founder" : "Customer"; c.style.display = kind ? "block" : "none"; }
+  async function moveTo(el, g, dx = 0.5, dy = 0.5) {
+    const r = rel(el); const c = $("cursor");
+    c.style.left = (r.x + r.w * dx - 4) + "px"; c.style.top = (r.y + r.h * dy - 3) + "px";
+    await sleep(800, g);
+  }
+  async function click(g) {
+    const c = $("cursor"); const rp = document.createElement("div"); rp.className = "ripple";
+    rp.style.left = (parseFloat(c.style.left) + 4) + "px"; rp.style.top = (parseFloat(c.style.top) + 3) + "px";
+    stage.appendChild(rp); setTimeout(() => rp.remove(), 600); await sleep(250, g);
+  }
+  function ring(el, label) {
+    const r = rel(el), pad = 8, R = $("ring"), L = $("ringLabel");
+    if (!el) { R.style.display = L.style.display = "none"; return; }
+    Object.assign(R.style, { display: "block", left: r.x - pad + "px", top: r.y - pad + "px", width: r.w + pad * 2 + "px", height: r.h + pad * 2 + "px" });
+    Object.assign(L.style, { display: "block", left: r.x + r.w / 2 + "px", top: r.y - pad + "px" });
+    L.textContent = label;
+  }
+  const noRing = () => { $("ring").style.display = "none"; $("ringLabel").style.display = "none"; };
+  function status(kind, text, instr) {
+    $("pStatus").className = "status " + (kind || ""); $("pStatusText").textContent = text;
+    const i = $("pInstr"); if (instr) { i.style.display = "block"; i.textContent = instr; } else if (instr === null) i.style.display = "none";
+  }
+  function speak(text) {
+    const s = $("speech");
+    if (!text) { s.style.display = "none"; $("pVoice").innerHTML = "Listening"; return; }
+    $("speechText").textContent = "“" + text + "”"; s.style.display = "block";
+    $("pVoice").innerHTML = 'Speaking… <span class="eq"><i></i><i></i><i></i><i></i></span>';
+  }
+  async function pipeline(g) {
+    const p = $("pipeline"); p.style.display = "flex";
+    for (const id of ["pp1", "pp2", "pp3", "pp4"]) { $(id).classList.add("on"); await sleep(380, g); }
+    await sleep(300, g); p.style.display = "none"; ["pp1", "pp2", "pp3", "pp4"].forEach((id) => $(id).classList.remove("on"));
+  }
+  async function typeInto(el, text, g, cps = 40) { el.textContent = ""; for (const ch of text) { el.textContent += ch; await sleep(1000 / cps, g); } }
+
+  function reset() {
+    elapsed = 0; noRing(); speak(""); $("speech").style.display = "none";
+    ["founder", "browser", "installer", "panel"].forEach((id) => show(id, false));
+    $("titleCard").style.display = "flex"; $("endCard").style.display = "none";
+    $("fName").textContent = ""; $("fGuide").textContent = ""; $("fSlug").innerHTML = "&nbsp;"; $("published").style.display = "none";
+    $("dlBubble").style.display = "none"; $("pathBox").className = "box"; $("pathBox").textContent = "";
+    $("insStart").style.display = "block"; $("insProgress").style.display = "none"; $("insDone").style.display = "none"; $("bar2").style.width = "0";
+    $("uac").style.display = "none"; $("pStart").style.display = "block"; $("pStop").style.display = "none";
+    $("pVoice").textContent = "Talk to LaunchPal and it walks you through each step out loud.";
+    status("", "Ready", null); chip(""); $("caption").style.opacity = 0; $("browser").style.zIndex = "";
+  }
+
+  // ---------- the story ----------
+  async function run(g) {
+    reset();
+    await sleep(4200, g);
+    $("titleCard").style.display = "none";
+
+    // FOUNDER
+    chip("founder"); show("founder");
+    caption("The founder writes their setup guide once and uploads it to LaunchPal.", "Every screen, the button to click, the step people get wrong, and what success looks like.");
+    await moveTo($("fName"), g, 0.1); await click(g);
+    await typeInto($("fName"), "Python for Windows", g, 22);
+    $("fSlug").textContent = "Customer link: /help/python-for-windows";
+    await moveTo($("fUpload"), g); await click(g);
+    const gEl = $("fGuide"); for (const line of GUIDE.split("\n")) { gEl.textContent += line + "\n"; await sleep(70, g); }
+    await sleep(600, g);
+    await moveTo($("fPublish"), g); await click(g);
+    $("published").style.display = "flex";
+    caption("Publish → LaunchPal gives the founder a support link for their download page.", "Customers never need an account.");
+    await sleep(3200, g);
+    await moveTo($("fOpen"), g); await click(g);
+    await sleep(500, g);
+
+    // CUSTOMER
+    show("founder", false); chip("customer");
+    show("browser"); show("panel");
+    caption("A customer wants Python. They open the download page — and LaunchPal's helper sits beside it.", "The helper captures the whole screen automatically. No screenshots, no window picking.");
+    await sleep(3000, g);
+    await moveTo($("pTalk"), g); await click(g);
+    $("pStart").style.display = "none"; $("pStop").style.display = "block";
+    $("pVoice").innerHTML = "Listening";
+    status("busy", "Looking…", null);
+    caption("They press Talk. LaunchPal looks at their screen and checks it against the founder's guide.");
+    await pipeline(g);
+    status("good", "Next step found", "Click Python 3.15.2 under the yellow button.");
+    ring($("pyLink"), "Click Python 3.15.2 under the yellow button.");
+    speak("Click Python 3.15.2 under the yellow button.");
+    caption("The big yellow button is the trap. LaunchPal rings the right link — on the customer's real screen.");
+    await sleep(4200, g);
+    await moveTo($("pyLink"), g); await click(g);
+    noRing(); speak(""); status("busy", "Guiding…", null);
+    $("dlBubble").style.display = "block";
+    caption("The screen changed, so LaunchPal hides the ring and looks again.", "Guided mode watches for changes — the customer never has to ask.");
+    await sleep(1300, g); status("busy", "Looking…"); await pipeline(g);
+    status("good", "Next step found", "Click python-3.15.2-amd64.exe to open it.");
+    ring($("dlItem"), "Click python-3.15.2-amd64.exe to open it.");
+    speak("Click python-3.15.2-amd64.exe to open it.");
+    await sleep(3600, g);
+    await moveTo($("dlItem"), g); await click(g);
+    noRing(); speak(""); status("busy", "Guiding…", null);
+    $("dlBubble").style.display = "none"; show("installer");
+    await sleep(1200, g); status("busy", "Looking…"); await pipeline(g);
+
+    // THE BLOCKER
+    status("good", "Next step found", "Check Add python.exe to PATH.");
+    ring($("insPath"), "Check Add python.exe to PATH.");
+    speak("Check Add python.exe to PATH.");
+    caption("This is the step everyone misses — without it, <b>python</b> won't work in the terminal.", "The founder's guide marks it as the blocker, so LaunchPal never lets the customer skip it.");
+    await sleep(4800, g);
+    await moveTo($("insPath"), g, 0.04); await click(g);
+    $("pathBox").className = "box on"; $("pathBox").textContent = "✓";
+    noRing(); speak(""); status("busy", "Looking…", null);
+    await pipeline(g);
+    status("good", "Next step found", "Click Install Now.");
+    ring($("insNow"), "Click Install Now.");
+    speak("Click Install Now.");
+    caption("Checkbox done — the ring moves to the next control by itself.");
+    await sleep(3200, g);
+    await moveTo($("insNow"), g, 0.3); await click(g);
+    noRing(); speak("");
+
+    // UAC
+    $("uac").style.display = "grid";
+    status("warn", "Answer the Windows prompt", "Click Yes on the Windows prompt to continue.");
+    speak("Click Yes on the Windows prompt to continue.");
+    caption("Windows asks for permission. The customer clicks Yes themselves — LaunchPal never takes control.");
+    await sleep(3000, g);
+    await moveTo($("uacYes"), g); await click(g);
+    $("uac").style.display = "none"; speak("");
+
+    // INSTALLING
+    $("insStart").style.display = "none"; $("insProgress").style.display = "block";
+    requestAnimationFrame(() => ($("bar2").style.width = "100%"));
+    status("warn", "Please wait", "Python is installing. Please wait a moment.");
+    speak("Python is installing. Please wait a moment.");
+    caption("While Python installs, LaunchPal keeps watching and tells them to wait.");
+    const comps = ["Python 3.15.2 Core Interpreter (64-bit)", "Python 3.15.2 Standard Library (64-bit)", "Python 3.15.2 pip Bootstrap (64-bit)", "Python 3.15.2 Documentation (64-bit)"];
+    for (const c of comps) { $("insComp").textContent = c; await sleep(1400, g); }
+    speak("");
+
+    // DONE
+    $("insProgress").style.display = "none"; $("insDone").style.display = "block";
+    status("busy", "Looking…", null); await pipeline(g);
+    status("done", "Setup complete ✅", "Python is installed. Click Close to finish.");
+    speak("Python is installed. Click Close to finish.");
+    caption("LaunchPal only says “done” when the guide's success evidence is on screen: <b>Setup was successful</b>.");
+    await sleep(4600, g);
+    await moveTo($("insClose"), g); await click(g);
+    speak(""); chip("");
+    $("caption").style.opacity = 0;
+    $("endCard").style.display = "flex";
+    await sleep(9000, g);
+  }
+
+  function start() { const g = ++gen; paused = false; $("bPlay").textContent = "Pause"; run(g).catch(() => {}); }
+  $("bPlay").onclick = () => { paused = !paused; $("bPlay").textContent = paused ? "Play" : "Pause"; };
+  $("bRestart").onclick = start;
+  document.addEventListener("keydown", (e) => { if (e.key === " ") { e.preventDefault(); $("bPlay").click(); } if (e.key.toLowerCase() === "r") start(); });
+  start();
+})();
+</script>
+</body>
+</html>
