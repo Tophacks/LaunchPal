@@ -14,7 +14,9 @@ const point = { status: "point", instruction: "Click Connect workspace.", visibl
 let handler: ModelClient["inspect"] = async () => point;
 let calls = 0;
 const model: ModelClient = { inspect: (a) => { calls++; return handler(a); } };
-const server = createServer({ config: { inspectToken: TOKEN, openaiTimeoutMs: 300, maxImageBytes: 2 * 1024 * 1024, openaiModel: "m" }, model, guide: "g" });
+let seenGuide = "";
+const guides = { async get(id?: string) { return id === undefined ? "DEFAULT" : id === "other-guide" ? "OTHER" : undefined; } };
+const server = createServer({ config: { inspectToken: TOKEN, openaiTimeoutMs: 300, maxImageBytes: 2 * 1024 * 1024, openaiModel: "m" }, model: { inspect: (a) => { seenGuide = a.guide; return model.inspect(a); } }, guides });
 let base = "";
 before(() => new Promise<void>((r) => server.listen(0, () => { base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`; r(); })));
 after(() => { server.close(); });
@@ -66,6 +68,18 @@ describe("POST /inspect", () => {
     assert.equal((await post({ ...ok, imageDataUrl: "data:image/png;base64," + Buffer.from("not a png at all, just text bytes").toString("base64") })).status, 400);
     assert.equal((await post({ ...ok, imageDataUrl: "data:image/jpeg;base64," + readFileSync(new URL("../fixtures/start.png", import.meta.url)).toString("base64") })).status, 400, "png bytes labelled jpeg");
   });
+  it("guideId selects the guide; absent uses default; unknown is 404; malformed is 400", async () => {
+    handler = async () => point;
+    await post(ok); assert.equal(seenGuide, "DEFAULT");
+    await post({ ...ok, guideId: "other-guide" }); assert.equal(seenGuide, "OTHER");
+    assert.equal((await post({ ...ok, guideId: "nope" })).status, 404);
+    for (const bad of ["../../etc/passwd", "A B", "", "x".repeat(80)]) assert.equal((await post({ ...ok, guideId: bad })).status, 400, bad);
+  });
+  it("accepts a 1920x1080 full-screen PNG and both helper questions", async () => {
+    handler = async () => point;
+    const img = "data:image/png;base64," + readFileSync(new URL("../fixtures/screen/start.png", import.meta.url)).toString("base64");
+    for (const question of ["Where do I click?", "What is the next step?"]) assert.equal((await post({ frameId: "s", imageDataUrl: img, question })).status, 200);
+  });
   it("413 over 2MB decoded", async () => {
     const big = Buffer.concat([readFileSync(new URL("../fixtures/start.png", import.meta.url)), Buffer.alloc(2 * 1024 * 1024)]);
     assert.equal((await post({ ...ok, imageDataUrl: "data:image/png;base64," + big.toString("base64") })).status, 413);
@@ -75,6 +89,10 @@ describe("POST /inspect", () => {
     assert.equal((await post(ok)).status, 504);
   });
   it("502 on upstream failure", async () => { handler = async () => { throw new UpstreamError("boom"); }; assert.equal((await post(ok)).status, 502); });
+  it("503 upstream_rate_limited when OpenAI returns 429", async () => {
+    handler = async () => { throw new UpstreamError("rl", 429); };
+    const r = await post(ok); assert.equal(r.status, 503); assert.equal((await r.json()).error.code, "upstream_rate_limited");
+  });
   it("retries once on invalid model output, then 502", async () => {
     calls = 0; handler = async () => ({ ...point, target: { x: 990, y: 0, width: 50, height: 5 } });
     const r = await post(ok); assert.equal(r.status, 502); assert.equal((await r.json()).error.code, "invalid_upstream_response"); assert.equal(calls, 2);

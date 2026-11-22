@@ -1,0 +1,10 @@
+# vision: full-screen fixtures, guideId, both helper questions
+
+- **What changed:** `services/vision/` now handles whole-screen captures (prompt: tight boxes, installer hidden/off-screen/other app => `unclear` + "bring the setup window to the front"). New 1920x1080 fixtures in `services/vision/fixtures/screen/` (start, blocked, success, loading, offscreen, behind, unrelated) + DOM-truth `truth.json`. Optional additive `guideId` on the request (guide store: `guide/<id>.md`, default Acme Sync; unknown id => 404). `"What is the next step?"` handled the same as `"Where do I click?"`. Original 1280x800 fixtures are untouched so `--fixture ../services/vision/fixtures/start.png` still aligns.
+- **Branch/PR:** claude/launchpal-vision-backend-6de3fn (PR below).
+- **What works:** 16/16 tests (mock model). `npm run verify -- --mock --set screen|window` passes all fixtures (pipeline check only; the model is scripted, NOT an accuracy result).
+- **How to run/test:** `cd services/vision && npm ci && npm test && npm run verify -- --mock --set screen`. Real model: set `OPENAI_API_KEY` + `INSPECT_BEARER_TOKEN`, drop `--mock`.
+- **Contract changes:** additive only: optional `guideId` (as proposed in 20261122-1300-fe-overlay-ring.md, item 2). Format `^[a-z0-9][a-z0-9-]{0,63}$`; proxy should forward it as-is. No renames/removals.
+- **Answers to fe:** (1) support link `/help/<guideSlug>` + `launchpal://` deep link: fine from vision's side. (2) `guideId` = the guide slug; Maritime resolves it through a `GuideStore` (file-backed now; will point at published guides when founder admin lands). (3) vision will add admin routes in its own PR and flag them.
+- **Blockers:** no `OPENAI_API_KEY` / network to OpenAI here, so no real-model accuracy or latency numbers; no Maritime deployment/endpoint yet.
+- **Who needs to act next:** Nate - add OpenAI key + Maritime access (then `npm run verify --set screen` live and deploy). fe - proxy may add optional `guideId`; use `fixtures/screen/*` for mocks of full-screen frames.

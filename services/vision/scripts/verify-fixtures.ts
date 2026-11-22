@@ -10,16 +10,26 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import type { AddressInfo } from "node:net";
 import { createServer } from "../src/server.js";
 import { createOpenAIModel, type ModelClient } from "../src/model.js";
+import { fileGuideStore } from "../src/guides.js";
 import { loadConfig } from "../src/config.js";
 const { chromium } = createRequire(import.meta.url)("playwright") as typeof import("playwright");
 
 type Box = { x: number; y: number; width: number; height: number };
-const names = ["start", "blocked", "success", "loading", "cropped", "unrelated"] as const;
-const expected: Record<string, "point" | "done" | "unclear"> = { start: "point", blocked: "point", success: "done", loading: "unclear", cropped: "unclear", unrelated: "unclear" };
-const truth = JSON.parse(readFileSync("fixtures/truth.json", "utf8")) as Record<string, Box>;
-const url = (n: string) => "data:image/png;base64," + readFileSync(`fixtures/${n}.png`).toString("base64");
+// --set screen (default): full 1920x1080 desktop captures, as the helper sends. --set window: original 1280x800 window captures.
+const setArg = process.argv.includes("--set") ? process.argv[process.argv.indexOf("--set") + 1] : "screen";
+const SETS: Record<string, { dir: string; w: number; h: number; names: readonly string[] }> = {
+  screen: { dir: "fixtures/screen", w: 1920, h: 1080, names: ["start", "blocked", "success", "loading", "offscreen", "behind", "unrelated"] },
+  window: { dir: "fixtures", w: 1280, h: 800, names: ["start", "blocked", "success", "loading", "cropped", "unrelated"] },
+};
+const set = SETS[setArg ?? ""] ?? (() => { throw new Error("--set must be screen or window"); })();
+const names = set.names;
+const expected: Record<string, "point" | "done" | "unclear"> = { start: "point", blocked: "point", success: "done" };
+for (const n of names) expected[n] ??= "unclear";
+const truth = JSON.parse(readFileSync(`${set.dir}/truth.json`, "utf8")) as Record<string, Box>;
+const url = (n: string) => "data:image/png;base64," + readFileSync(`${set.dir}/${n}.png`).toString("base64");
+const QUESTIONS = ["Where do I click?", "What is the next step?"]; // alternate to exercise both helper questions
 const mock = process.argv.includes("--mock");
-const guide = readFileSync("guide/acme-sync.md", "utf8");
+const guides = fileGuideStore("guide");
 const TOKEN = process.env.INSPECT_BEARER_TOKEN ?? "local-test-token";
 
 let base = process.env.BASE_URL?.replace(/\/$/, "");
@@ -35,19 +45,19 @@ if (!base) {
       if (n === "start") return { status: "point", instruction: "Click Connect workspace.", visible_label: "Connect workspace", success_evidence: null, target: g(truth.start!) };
       if (n === "blocked") return { status: "point", instruction: "Click Allow access.", visible_label: "Allow access", success_evidence: null, target: g(truth.blocked!) };
       if (n === "success") return { status: "done", instruction: "Your workspace is connected.", visible_label: null, success_evidence: "Workspace connected + Sync status: Active", target: null };
-      return { status: "unclear", instruction: "Please open the Acme Sync setup page and share that whole window.", visible_label: null, success_evidence: null, target: null };
+      return { status: "unclear", instruction: "Please bring the Acme Sync setup window to the front.", visible_label: null, success_evidence: null, target: null };
     } };
     cfg = { inspectToken: TOKEN, openaiTimeoutMs: 20000, maxImageBytes: 2 * 1024 * 1024, openaiModel: "mock" };
   } else {
     cfg = loadConfig({ ...process.env, INSPECT_BEARER_TOKEN: TOKEN });
     model = createOpenAIModel(cfg);
   }
-  const srv = createServer({ config: cfg, model, guide });
+  const srv = createServer({ config: cfg, model, guides });
   await new Promise<void>((r) => srv.listen(0, r));
   base = `http://127.0.0.1:${(srv.address() as AddressInfo).port}`;
   closer = () => srv.close();
 }
-console.log(`mode: ${process.env.BASE_URL ? "http " + base : mock ? "MOCK (pipeline only, not model accuracy)" : "in-process real OpenAI model"}`);
+console.log(`mode: ${process.env.BASE_URL ? "http " + base : mock ? `MOCK (pipeline only, not model accuracy), set=${setArg}` : "in-process real OpenAI model"}`);
 
 const iou = (a: Box, b: Box) => {
   const w = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
@@ -55,13 +65,17 @@ const iou = (a: Box, b: Box) => {
   return (w * h) / (a.width * a.height + b.width * b.height - w * h);
 };
 
-mkdirSync("fixtures/out", { recursive: true });
+const OUT = `fixtures/out/${setArg}`;
+mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch();
 const rows: string[] = [];
 let failures = 0;
+let qi = 0;
+const GAP = Number(process.env.VERIFY_GAP_MS ?? 0); // pause between calls to stay under OpenAI rate limits
 for (const n of names) {
+  if (GAP && qi) await new Promise((r) => setTimeout(r, GAP));
   const t0 = performance.now();
-  const res = await fetch(`${base}/inspect`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${TOKEN}` }, body: JSON.stringify({ frameId: `fx-${n}`, imageDataUrl: url(n), question: "Where do I click?" }) });
+  const res = await fetch(`${base}/inspect`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${TOKEN}` }, body: JSON.stringify({ frameId: `fx-${n}`, imageDataUrl: url(n), question: QUESTIONS[qi++ % 2] }) });
   const ms = Math.round(performance.now() - t0);
   const j = (await res.json()) as any;
   const problems: string[] = [];
@@ -79,10 +93,10 @@ for (const n of names) {
       if (!inside(g, cx, cy)) problems.push("box center not on intended control");
       if (!encloses) problems.push("box does not enclose control (1% tolerance)");
       if (score < 0.6) problems.push(`IoU ${score.toFixed(2)} < 0.6`);
-      const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-      await page.setContent(`<body style="margin:0"><div style="position:relative;width:1280px;height:800px"><img src="${url(n)}"><div style="position:absolute;left:${t.x * 100}%;top:${t.y * 100}%;width:${t.width * 100}%;height:${t.height * 100}%;border:3px solid #ff2d55;border-radius:6px;box-shadow:0 0 0 2px #fff"></div></div></body>`);
+      const page = await browser.newPage({ viewport: { width: set.w, height: set.h } });
+      await page.setContent(`<body style="margin:0"><div style="position:relative;width:${set.w}px;height:${set.h}px"><img src="${url(n)}"><div style="position:absolute;left:${t.x * 100}%;top:${t.y * 100}%;width:${t.width * 100}%;height:${t.height * 100}%;border:3px solid #ff2d55;border-radius:6px;box-shadow:0 0 0 2px #fff"></div></div></body>`);
       await page.waitForLoadState("load");
-      await page.screenshot({ path: `fixtures/out/${n}.annotated.png` });
+      await page.screenshot({ path: `${OUT}/${n}.annotated.png` });
       await page.close();
       rows.push(`| ${n} | point | "${j.instruction}" | ${score.toFixed(2)} | ${ms} | ${problems.length ? "FAIL " + problems.join("; ") : "pass"} |`);
     } else rows.push(`| ${n} | ${j.status} | "${j.instruction}" | n/a (target null) | ${ms} | ${problems.length ? "FAIL " + problems.join("; ") : "pass"} |`);
@@ -94,5 +108,5 @@ await browser.close();
 closer();
 const out = "| fixture | status | instruction | IoU vs control | ms | result |\n|---|---|---|---|---|---|\n" + rows.join("\n");
 console.log(out);
-writeFileSync("fixtures/out/results.md", out + "\n");
+writeFileSync(`${OUT}/results.md`, out + "\n");
 process.exit(failures ? 1 : 0);

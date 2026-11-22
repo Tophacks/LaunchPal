@@ -8,7 +8,11 @@ export interface ModelClient {
   inspect(args: { imageDataUrl: string; question: string; guide: string; signal: AbortSignal }): Promise<unknown>;
 }
 
-export class UpstreamError extends Error {}
+export class UpstreamError extends Error {
+  constructor(message: string, public upstreamStatus?: number) {
+    super(message);
+  }
+}
 
 export function createOpenAIModel(cfg: Config): ModelClient {
   const client = new OpenAI({ apiKey: cfg.openaiApiKey, maxRetries: 0 });
@@ -31,15 +35,16 @@ export function createOpenAIModel(cfg: Config): ModelClient {
               },
             ],
             text: { format: { type: "json_schema", name: "inspection", strict: true, schema: MODEL_JSON_SCHEMA as unknown as Record<string, unknown> } },
-            max_output_tokens: 600,
+            max_output_tokens: 2000, // reasoning models count reasoning tokens here
+            ...(cfg.openaiReasoningEffort ? { reasoning: { effort: cfg.openaiReasoningEffort as "low" } } : {}),
           },
           { signal },
         );
         text = res.output_text;
       } catch (e) {
         if (signal.aborted) throw e;
-        const status = (e as { status?: number }).status;
-        throw new UpstreamError(`OpenAI request failed${status ? ` (HTTP ${status})` : ""}.`);
+        const { status, code } = e as { status?: number; code?: string };
+        throw new UpstreamError(`OpenAI request failed${status ? ` (HTTP ${status}${code ? ` ${code}` : ""})` : ""}.`, status);
       }
       try {
         return JSON.parse(text);

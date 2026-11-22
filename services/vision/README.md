@@ -15,9 +15,10 @@ Node/TypeScript service behind the Wasp proxy. Implements the contract in [`/AGE
 | `INSPECT_BEARER_TOKEN` | yes | Shared secret. Set the same value in the Wasp server (the proxy). |
 | `OPENAI_API_KEY` | yes | Server-side only. |
 | `OPENAI_MODEL` | no | Image-capable Responses API model. Default `gpt-4.1` (unverified against live API, see PR). |
-| `OPENAI_TIMEOUT_MS` | no | Whole-request deadline incl. one validation retry. Default `20000`. |
+| `OPENAI_TIMEOUT_MS` | no | Whole-request deadline incl. one validation retry. Default `12000` (kept below the Wasp proxy's 15 s timeout so the proxy gets a clean 504 instead of timing out itself). |
 | `PORT` | no | Listen port. Default `8080`. Maritime should inject it. |
-| `GUIDE_PATH` | no | Founder guide file. Default `guide/acme-sync.md`. |
+| `DEFAULT_GUIDE_ID` | no | Guide used when the request has no `guideId`. Default `acme-sync` (`guide/<id>.md`). |
+| `GUIDE_PATH` | no | Overrides the default guide file path. |
 
 ## Run
 
@@ -27,9 +28,15 @@ cp .env.example .env   # fill in
 npm run dev            # or: npm run build && npm start
 npm test               # unit + HTTP tests, mock model, no network
 npm run fixtures       # re-render screenshot fixtures (Playwright/Chromium)
-npm run verify -- --mock   # pipeline check; omit --mock with OPENAI_API_KEY set for real model
+npm run fixtures:screen    # re-render the 1920x1080 full-screen fixtures
+npm run verify -- --mock --set screen   # pipeline check; omit --mock with OPENAI_API_KEY set for the real model
+                                        # --set window = the original 1280x800 window captures
 BASE_URL=https://... INSPECT_BEARER_TOKEN=... npm run verify   # against a deployed service
 ```
+
+Note for the agent sandbox only: Node's `fetch` ignores the proxy there, so run live checks with `NODE_USE_ENV_PROXY=1`.
+
+Wasp proxy mapping: proxy `MARITIME_INSPECT_URL` = this service's base URL, proxy `MARITIME_TOKEN` = this service's `INSPECT_BEARER_TOKEN` (same value).
 
 Docker: `docker build -t launchpal-vision services/vision` (context is `services/vision`).
 
@@ -41,7 +48,21 @@ curl -sS -X POST "$BASE_URL/inspect" \
   -d "{\"frameId\":\"frame-123\",\"question\":\"Where do I click?\",\"imageDataUrl\":\"data:image/png;base64,$(base64 -w0 fixtures/start.png)\"}"
 ```
 
+Optional additive field: `"guideId": "acme-sync"` (`^[a-z0-9][a-z0-9-]{0,63}$`). Absent = default guide; unknown id = 404 `guide_not_found`.
+`question` is `"Where do I click?"` or `"What is the next step?"` (both mean: one next action).
+
 ## Sample responses (build against these)
+
+**Full-screen captures** (what the desktop helper sends; `fixtures/screen/*.png`, 1920x1080). Use these for the Electron overlay:
+```json
+{ "frameId": "f1", "status": "point", "instruction": "Click Connect workspace.",
+  "target": { "x": 0.5356, "y": 0.3178, "width": 0.0898, "height": 0.0389 } }
+```
+Blocked (`screen/blocked.png`): `"Click Allow access."` target ≈ `{ "x": 0.612, "y": 0.538, "width": 0.067, "height": 0.039 }`.
+Installer hidden or off-screen (`screen/behind.png`, `screen/offscreen.png`): `unclear`, `"Please bring the Acme Sync setup window to the front."`, `target: null`.
+Exact DOM ground-truth boxes are in `fixtures/screen/truth.json`.
+
+**Window captures** (original 1280x800, `fixtures/*.png`; unchanged so existing mocks and `--fixture ../services/vision/fixtures/start.png` still align):
 
 Starting screen (`fixtures/start.png`):
 ```json
@@ -60,12 +81,12 @@ Success (`fixtures/success.png`):
 Cropped or unrelated screen (`fixtures/cropped.png`, `fixtures/unrelated.png`):
 ```json
 { "frameId": "frame-126", "status": "unclear",
-  "instruction": "Please open the Acme Sync setup page and share that whole window.", "target": null }
+  "instruction": "Please bring the Acme Sync setup window to the front.", "target": null }
 ```
 These are scripted examples of the contract, not captured model output.
 
 Errors are `{ "error": { "code", "message" } }`: 400 `invalid_request`/`invalid_json`/`invalid_image`, 401 `unauthorized`,
-413 `image_too_large` (>2 MB decoded), 415, 502 `upstream_error`/`invalid_upstream_response`, 504 `upstream_timeout`.
+404 `guide_not_found`, 413 `image_too_large` (>2 MB decoded), 415, 502 `upstream_error`/`invalid_upstream_response`, 504 `upstream_timeout`.
 
 ## How it works
 
