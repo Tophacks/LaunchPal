@@ -1,0 +1,7 @@
+{
+  "hooks": {
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "bash scripts/require-clean-tree.sh" } ] }
+    ]
+  }
+}
