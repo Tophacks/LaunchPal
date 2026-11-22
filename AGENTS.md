@@ -12,7 +12,7 @@ Fallback: if the desktop helper fails, the same Wasp app runs in a browser with 
 | --- | --- | --- |
 | Frontend and integration | Electron desktop helper (automatic capture, click-through on-screen overlay, guided mode), Wasp/React control panel, browser fallback, and the Wasp server proxy. Owns final integration. | Draw a ring on the real screen from a mock response, and expose `window.launchpal` (inspection + step events) to the voice teammate. |
 | Maritime and vision (Nate) | Node/TypeScript inspection service, founder setup guide, screenshot fixtures, and Maritime deployment. | Share the endpoint, required environment variable names, and sample results for the starting, blocked, and success screens. |
-| ElevenLabs and demo | Voice agent configuration, `inspect_screen` client tool, speaking guided-mode step events, volunteer test, and demo recording. | Get "Where do I click?" to call the tool and speak a mock instruction, and speak a mock `launchpal:step` event unprompted. |
+| ElevenLabs and demo (Alisa)| Voice agent configuration, `inspect_screen` client tool, speaking guided-mode step events, volunteer test, and demo recording. | Get "Where do I click?" to call the tool and speak a mock instruction, and speak a mock `launchpal:step` event unprompted. |
 
 ## Working together
 
