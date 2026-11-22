@@ -75,6 +75,12 @@ describe("POST /inspect", () => {
     assert.equal((await post({ ...ok, guideId: "nope" })).status, 404);
     for (const bad of ["../../etc/passwd", "A B", "", "x".repeat(80)]) assert.equal((await post({ ...ok, guideId: bad })).status, 400, bad);
   });
+  it("guideText (founder-published guide from the proxy) wins over guideId; empty or huge is 400", async () => {
+    handler = async () => point;
+    await post({ ...ok, guideId: "nope", guideText: "PUBLISHED GUIDE" }); assert.equal(seenGuide, "PUBLISHED GUIDE");
+    assert.equal((await post({ ...ok, guideText: "  " })).status, 400);
+    assert.equal((await post({ ...ok, guideText: "x".repeat(20001) })).status, 400);
+  });
   it("accepts a 1920x1080 full-screen PNG and both helper questions", async () => {
     handler = async () => point;
     const img = "data:image/png;base64," + readFileSync(new URL("../fixtures/screen/start.png", import.meta.url)).toString("base64");

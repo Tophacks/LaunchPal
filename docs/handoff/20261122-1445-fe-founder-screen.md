@@ -8,3 +8,5 @@
   Until then the model ignores founder guides (zod strips the field) and uses the default Acme Sync guide.
 - **Contract changes:** additive optional `guideText` on the proxy → vision request (needs vision to accept it).
 - **Who needs to act next:** Nate: the 2 lines above. Alisa: the voice agent's prompt still embeds the Acme Sync guide; "why" questions about Python will be off.
+
+**Update 14:40:** with Ahnaf's approval, fe made the 2-line `guideText` change in `services/vision` (schema.ts, inspect.ts, + 1 test; 18/18 pass) and merged it so Render redeploys before the 3:00 deadline. Nate: please review when you can.
