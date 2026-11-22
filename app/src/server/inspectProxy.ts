@@ -3,6 +3,7 @@
 import express from "express";
 import type { MiddlewareConfigFn } from "wasp/server";
 import type { InspectHealth, InspectProxy } from "wasp/server/api";
+import { getStoredGuide } from "./guides";
 
 const MAX_DECODED_BYTES = 2 * 1024 * 1024;
 const UPSTREAM_TIMEOUT_MS = 15_000;
@@ -25,6 +26,16 @@ function maritimeConfig() {
   const base = (process.env.MARITIME_INSPECT_URL || "").trim().replace(/\/+$/, "");
   const token = (process.env.MARITIME_TOKEN || "").trim();
   return base && token ? { base, token } : null;
+}
+
+/**
+ * A founder-published guide is sent as `guideText` (its slug is not a file guide on the vision service, so guideId
+ * is omitted). Otherwise guideId is forwarded and the vision service uses its own file guides (e.g. acme-sync).
+ */
+function upstreamBody(frameId: string, imageDataUrl: string, question: string, guideId?: string) {
+  const published = getStoredGuide(guideId);
+  if (published) return { frameId, imageDataUrl, question, guideText: published.content };
+  return guideId ? { frameId, imageDataUrl, question, guideId } : { frameId, imageDataUrl, question };
 }
 
 function decodedSize(b64: string) {
@@ -57,7 +68,7 @@ export const inspectProxy: InspectProxy = async (req, res) => {
     const upstream = await fetch(`${cfg.base}/inspect`, {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${cfg.token}` },
-      body: JSON.stringify(guideId ? { frameId, imageDataUrl, question, guideId } : { frameId, imageDataUrl, question }),
+      body: JSON.stringify(upstreamBody(frameId, imageDataUrl, question, guideId as string | undefined)),
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
     const ms = Date.now() - started;

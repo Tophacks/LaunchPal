@@ -6,6 +6,8 @@ export const InspectRequest = z.object({
   question: z.string().trim().min(1).max(1000),
   /** Optional (additive): which published guide to use. Default guide when absent. */
   guideId: z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/).optional(),
+  /** Optional (additive): the founder-published guide's markdown, sent by the Wasp proxy. Takes precedence over guideId. */
+  guideText: z.string().trim().min(1).max(20000).optional(),
 });
 export type InspectRequest = z.infer<typeof InspectRequest>;
 

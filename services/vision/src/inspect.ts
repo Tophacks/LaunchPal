@@ -17,9 +17,9 @@ const MAX_ATTEMPTS = 2; // one retry if the model returns output that fails serv
 export async function inspect(body: unknown, deps: InspectDeps): Promise<InspectResponse> {
   const req = InspectRequest.safeParse(body);
   if (!req.success) throw new HttpError(400, "invalid_request", "Body must include frameId, imageDataUrl and question strings.");
-  const { frameId, imageDataUrl, question, guideId } = req.data;
+  const { frameId, imageDataUrl, question, guideId, guideText } = req.data;
   parseImageDataUrl(imageDataUrl, deps.maxImageBytes);
-  const guide = await deps.guides.get(guideId);
+  const guide = guideText ?? (await deps.guides.get(guideId));
   if (guide === undefined) throw new HttpError(guideId ? 404 : 500, guideId ? "guide_not_found" : "internal_error", guideId ? `Unknown guideId "${guideId}".` : "Default guide unavailable.");
 
   const signal = AbortSignal.timeout(deps.timeoutMs); // one deadline across all attempts

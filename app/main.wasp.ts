@@ -1,4 +1,6 @@
-import { action, api, apiNamespace, app, page, route } from "@wasp.sh/spec";
+import { action, api, apiNamespace, app, page, query, route } from "@wasp.sh/spec";
+import { FounderPage } from "./src/FounderPage" with { type: "ref" };
+import { getPublishedGuide, listPublishedGuides, publishGuide } from "./src/server/guides" with { type: "ref" };
 import { getElevenLabsToken } from "./src/server/elevenlabs" with { type: "ref" };
 import { ControlPanelPage } from "./src/ControlPanelPage" with { type: "ref" };
 import {
@@ -25,6 +27,12 @@ export default app({
     apiNamespace("/api/inspect", { middlewareConfigFn: inspectNamespaceMiddleware }),
     api("GET", "/api/inspect/health", inspectHealth, { auth: false }),
     api("POST", "/api/inspect", inspectProxy, { auth: false }),
+
+    // Founder screen (fe): publish a setup guide → customer support link /help/<slug>.
+    route("FounderRoute", "/founder", page(FounderPage)),
+    action(publishGuide),
+    query(getPublishedGuide),
+    query(listPublishedGuides),
 
     // Voice (Alisa's VoiceSession uses this): short-lived ElevenLabs conversation token.
     action(getElevenLabsToken),
