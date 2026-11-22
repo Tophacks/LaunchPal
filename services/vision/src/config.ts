@@ -18,7 +18,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     inspectToken: env.INSPECT_BEARER_TOKEN!,
     openaiApiKey: env.OPENAI_API_KEY!,
     openaiModel: env.OPENAI_MODEL ?? "gpt-4.1",
-    openaiTimeoutMs: Number(env.OPENAI_TIMEOUT_MS ?? 20000),
+    openaiTimeoutMs: Number(env.OPENAI_TIMEOUT_MS ?? 12000),
     maxImageBytes: MAX_IMAGE_BYTES,
   };
 }

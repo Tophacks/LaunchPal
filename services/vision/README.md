@@ -15,7 +15,7 @@ Node/TypeScript service behind the Wasp proxy. Implements the contract in [`/AGE
 | `INSPECT_BEARER_TOKEN` | yes | Shared secret. Set the same value in the Wasp server (the proxy). |
 | `OPENAI_API_KEY` | yes | Server-side only. |
 | `OPENAI_MODEL` | no | Image-capable Responses API model. Default `gpt-4.1` (unverified against live API, see PR). |
-| `OPENAI_TIMEOUT_MS` | no | Whole-request deadline incl. one validation retry. Default `20000`. |
+| `OPENAI_TIMEOUT_MS` | no | Whole-request deadline incl. one validation retry. Default `12000` (kept below the Wasp proxy's 15 s timeout so the proxy gets a clean 504 instead of timing out itself). |
 | `PORT` | no | Listen port. Default `8080`. Maritime should inject it. |
 | `DEFAULT_GUIDE_ID` | no | Guide used when the request has no `guideId`. Default `acme-sync` (`guide/<id>.md`). |
 | `GUIDE_PATH` | no | Overrides the default guide file path. |
@@ -33,6 +33,10 @@ npm run verify -- --mock --set screen   # pipeline check; omit --mock with OPENA
                                         # --set window = the original 1280x800 window captures
 BASE_URL=https://... INSPECT_BEARER_TOKEN=... npm run verify   # against a deployed service
 ```
+
+Note for the agent sandbox only: Node's `fetch` ignores the proxy there, so run live checks with `NODE_USE_ENV_PROXY=1`.
+
+Wasp proxy mapping: proxy `MARITIME_INSPECT_URL` = this service's base URL, proxy `MARITIME_TOKEN` = this service's `INSPECT_BEARER_TOKEN` (same value).
 
 Docker: `docker build -t launchpal-vision services/vision` (context is `services/vision`).
 
