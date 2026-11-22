@@ -18,7 +18,7 @@ export interface CaptureAdapter {
   /** Full screen frame. Throws LaunchpalError with a user-facing message on failure. */
   captureFrame(): Promise<{ imageDataUrl: string; blank: boolean }>;
   /** Cheap grayscale frame for change detection, plus a region to ignore (the control window). */
-  captureThumb(): Promise<{ thumb: Thumb; exclude: Target | null }>;
+  captureThumb(): Promise<{ thumb: Thumb; exclude: Target | Target[] | null }>;
   showRing(target: Target, label: string): Promise<void>;
   clearRing(): Promise<void>;
 }
@@ -185,7 +185,7 @@ export function createLaunchpal(opts: LaunchpalOptions): LaunchpalApi & {
   async function tick() {
     if (!guided) return;
     if (inFlight) return schedule(SETTLE_POLL_MS);
-    let snap: { thumb: Thumb; exclude: Target | null };
+    let snap: { thumb: Thumb; exclude: Target | Target[] | null };
     try {
       snap = await adapter.captureThumb();
     } catch {

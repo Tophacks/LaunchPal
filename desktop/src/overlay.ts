@@ -46,7 +46,11 @@ export function createOverlay(): BrowserWindow {
   overlay.setIgnoreMouseEvents(true, { forward: true });
   // Exclude the ring from every screen capture (Windows: WDA_EXCLUDEFROMCAPTURE, macOS: sharingType none).
   // LAUNCHPAL_DEBUG_CAPTURE_OVERLAY=1 turns this off so alignment can be checked with a screenshot.
-  overlay.setContentProtection(process.env.LAUNCHPAL_DEBUG_CAPTURE_OVERLAY !== "1");
+  // LAUNCHPAL_RECORDING=1 (npm run demo:record) also shows it, so screen recorders capture the ring for demo videos;
+  // the ring is still cleared before every inspection capture and ignored by change detection.
+  overlay.setContentProtection(
+    process.env.LAUNCHPAL_DEBUG_CAPTURE_OVERLAY !== "1" && process.env.LAUNCHPAL_RECORDING !== "1",
+  );
 
   overlay.webContents.on("did-finish-load", () => {
     overlayReady = true;
