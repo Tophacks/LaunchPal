@@ -9,7 +9,8 @@
     "start": "npm run build && node scripts/run-electron.js",
     "dev": "npm run build && node scripts/run-electron.js --dev",
     "dev-panel": "npm run build && node scripts/run-electron.js --dev --dev-panel",
-    "test-rings":"npm run build && node scripts/run-electron.js --dev --test-rings"
+    "fixture-demo": "npm run build && node scripts/run-electron.js --dev --fixture ../services/vision/fixtures/start.png,../services/vision/fixtures/blocked.png,../services/vision/fixtures/success.png",
+    "test-rings": "npm run build && node scripts/run-electron.js --dev --test-rings"
   },
   "devDependencies": {
     "electron": "45.4.1",

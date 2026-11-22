@@ -45,6 +45,16 @@ function avoidRing(t: Target) {
   control.setBounds(cornerBounds(corner));
 }
 
+/**
+ * Windows lets a window that covers the whole monitor (e.g. a full-screen installer) rise above normal
+ * always-on-top windows. Re-assert the control window whenever guidance changes.
+ */
+function keepOnTop() {
+  if (!control || control.isDestroyed() || control.isMinimized()) return;
+  control.setAlwaysOnTop(true, "pop-up-menu");
+  control.moveTop();
+}
+
 /** Control window region as fractions of the primary display (excluded from guided-mode change detection). */
 function controlRegion() {
   if (!control || control.isDestroyed() || !control.isVisible()) return null;
@@ -82,7 +92,8 @@ export function registerNativeIpc() {
   ipcMain.handle("native:showRing", async (e, target: Target, label?: string) => {
     if (!isFromControl(e)) return;
     avoidRing(target);
-    await showRing(target, label);
+    keepOnTop();
+    await showRing(target, label); // re-asserts the overlay above the control window
   });
   ipcMain.handle("native:clearRing", async (e) => {
     if (!isFromControl(e)) return;
@@ -108,7 +119,7 @@ export function createControlWindow(url = panelUrl()): BrowserWindow {
       nodeIntegration: false,
     },
   });
-  control.setAlwaysOnTop(true, "floating");
+  control.setAlwaysOnTop(true, "pop-up-menu");
 
   // Microphone for the voice agent; nothing else.
   const allowed = new URL(url).origin;

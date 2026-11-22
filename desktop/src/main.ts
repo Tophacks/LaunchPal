@@ -39,7 +39,7 @@ function registerDevShortcuts() {
  * Dev only: `--fixture <png>` shows a screenshot fixture stretched over the whole primary display,
  * so fractional targets from services/vision samples land on the real control (alignment check).
  */
-function openFixtureWindow(file: string) {
+function openFixtureWindow(files: string[]) {
   const b = primaryBounds();
   const win = new BrowserWindow({
     ...b,
@@ -48,13 +48,20 @@ function openFixtureWindow(file: string) {
     backgroundColor: "#000000",
     webPreferences: { sandbox: true, contextIsolation: true },
   });
-  win.setAlwaysOnTop(true, "floating");
   win.setBounds(b);
-  const src = "data:image/png;base64," + fs.readFileSync(path.resolve(file)).toString("base64");
+  // Fake installer: each click advances to the next screenshot (e.g. start → blocked → success).
+  const imgs = files
+    .map((f, i) => {
+      const src = "data:image/png;base64," + fs.readFileSync(path.resolve(f)).toString("base64");
+      return `<img src="${src}" style="width:100vw;height:100vh;object-fit:fill;display:${i ? "none" : "block"}">`;
+    })
+    .join("");
+  const script =
+    "let i=0;const im=[...document.images];window.nextFixture=()=>{im[i].style.display='none';i=Math.min(i+1,im.length-1);im[i].style.display='block'};document.body.onclick=window.nextFixture;";
   win.loadURL(
     "data:text/html," +
       encodeURIComponent(
-        `<body style="margin:0;overflow:hidden;background:#000"><img src="${src}" style="width:100vw;height:100vh;object-fit:fill;display:block"></body>`,
+        `<body style="margin:0;overflow:hidden;background:#000;cursor:pointer">${imgs}<script>${script}</script></body>`,
       ),
   );
 }
@@ -76,7 +83,10 @@ app.whenReady().then(() => {
   if (DEV) {
     registerDevShortcuts();
     const fixtureIdx = process.argv.indexOf("--fixture");
-    if (fixtureIdx > 0 && process.argv[fixtureIdx + 1]) openFixtureWindow(process.argv[fixtureIdx + 1]);
+    if (fixtureIdx > 0 && process.argv[fixtureIdx + 1]) {
+      openFixtureWindow(process.argv[fixtureIdx + 1].split(","));
+      control.moveTop();
+    }
     if (process.argv.includes("--test-rings")) void showRings(TEST_RINGS);
     if (process.argv.includes("--mock-ring")) void showRings([MOCK_RING]);
     overlay.once("show", () =>

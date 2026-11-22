@@ -2,7 +2,7 @@
 import type { InspectRequest, InspectResponse } from "./types";
 
 export const GENERIC_ERROR = "Couldn't check your screen — try again.";
-const CLIENT_TIMEOUT_MS = 20_000; // proxy itself times out at 15 s
+export const CLIENT_TIMEOUT_MS = 20_000; // proxy itself times out at 15 s
 
 export class LaunchpalError extends Error {
   constructor(message: string, public code = "inspect-failed") {
@@ -32,24 +32,14 @@ export function parseInspectResponse(body: unknown, frameId: string): InspectRes
   };
 }
 
-export function makeProxyInspect(baseUrl = "") {
+/** `postJson` performs the HTTP call (Wasp's `api` client in the app) and rejects on non-2xx. */
+export function makeProxyInspect(postJson: (path: string, body: unknown) => Promise<unknown>) {
   return async function proxyInspect(req: InspectRequest): Promise<InspectResponse> {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), CLIENT_TIMEOUT_MS);
     try {
-      const res = await fetch(`${baseUrl}/api/inspect`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(req),
-        signal: ctrl.signal,
-      });
-      if (!res.ok) throw new LaunchpalError(GENERIC_ERROR, `http-${res.status}`);
-      return parseInspectResponse(await res.json(), req.frameId);
+      return parseInspectResponse(await postJson("/api/inspect", req), req.frameId);
     } catch (e) {
       if (e instanceof LaunchpalError) throw e;
       throw new LaunchpalError(GENERIC_ERROR, "network");
-    } finally {
-      clearTimeout(timer);
     }
   };
 }

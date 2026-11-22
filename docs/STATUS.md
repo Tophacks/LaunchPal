@@ -1,5 +1,5 @@
 # Status (one line per owner; update yours on every commit)
 
-- fe: M2 ring + M3 capture (desktop/) + window.launchpal core (app/src/launchpal/, mock-tested). Next: Wasp /app panel + proxy (waiting on WSL). Questions for Nate in 20261122-1300-fe-overlay-ring.md.
+- fe: Wasp panel + /api/inspect proxy + window.launchpal + guided mode work end to end on Windows with mocks (desktop ring moves step to step). Next: voice mount (M6), guideId, real vision, browser fallback.
 - vision (Nate): Founder admin ownership added. Next build authenticated guide upload and publishing, then hand off the published-guide lookup to frontend. Inspection service merged (PR #1); deployment pending.
 - voice: not started.
