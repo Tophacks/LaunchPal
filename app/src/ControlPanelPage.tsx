@@ -1,8 +1,9 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useParams } from "react-router";
 import { mockNextUnclear } from "./launchpal/mock";
-import { getLaunchpal, getStatus, MOCK_INSPECT, subscribeStatus } from "./launchpal/setup";
+import { getLaunchpal, getStatus, guideIdFromLocation, MOCK_INSPECT, subscribeStatus } from "./launchpal/setup";
 import { QUESTION_ASK, STEP_EVENT, type InspectResponse, type StatusKind } from "./launchpal/types";
+import { VoiceSession } from "./voice/VoiceSession";
 import "./panel.css";
 
 const TONE: Record<StatusKind, string> = {
@@ -22,10 +23,17 @@ function titleFromSlug(slug?: string) {
 
 export function ControlPanelPage() {
   const { guideSlug } = useParams();
+  const guideId = guideIdFromLocation();
   const lp = getLaunchpal();
   const status = useSyncExternalStore(subscribeStatus, getStatus);
   const [asking, setAsking] = useState(false);
   const [lastStep, setLastStep] = useState<InspectResponse | null>(null);
+  const [talking, setTalking] = useState(false);
+
+  function startTalking() {
+    lp.startGuided(); // starting a voice session starts guided mode (AGENTS.md)
+    setTalking(true);
+  }
 
   useEffect(() => {
     const onStep = (e: CustomEvent<InspectResponse>) => setLastStep(e.detail);
@@ -73,6 +81,17 @@ export function ControlPanelPage() {
 
       {showInstruction && <p className="lp-instruction">{status.instruction}</p>}
 
+      {lp.mode === "browser" && (
+        <section className="lp-helper">
+          <a className="lp-btn lp-btn-primary lp-link-btn" href={`launchpal://guide/${guideId ?? "acme-sync"}`}>
+            Open LaunchPal helper
+          </a>
+          <p className="lp-muted">
+            The helper highlights the next button right on your screen. Already open? It will switch to this guide.
+          </p>
+        </section>
+      )}
+
       <div className="lp-actions">
         {status.guided ? (
           <button className="lp-btn lp-btn-stop" onClick={() => lp.stopGuided()}>
@@ -90,7 +109,16 @@ export function ControlPanelPage() {
 
       <section className="lp-voice" aria-label="Voice assistant">
         <p className="lp-voice-title">Voice assistant</p>
-        <p className="lp-muted">Talk to LaunchPal hands-free. Coming soon.</p>
+        {talking ? (
+          <VoiceSession onEnd={() => setTalking(false)} />
+        ) : (
+          <>
+            <p className="lp-muted">Talk to LaunchPal and it will walk you through each step out loud.</p>
+            <button className="lp-btn" onClick={startTalking}>
+              Talk
+            </button>
+          </>
+        )}
       </section>
 
       {MOCK_INSPECT && (

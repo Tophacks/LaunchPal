@@ -27,6 +27,8 @@ export interface LaunchpalOptions {
   adapter: CaptureAdapter;
   inspect: (req: InspectRequest) => Promise<InspectResponse>;
   onStatus?: (s: LaunchpalStatus) => void;
+  /** Published guide slug sent as guideId (omitted = default guide). */
+  guideId?: string;
 }
 
 const POLL_MS = 2000;
@@ -93,7 +95,9 @@ export function createLaunchpal(opts: LaunchpalOptions): LaunchpalApi & {
         );
       }
       // 4. call the proxy
-      const res = await inspect({ frameId, imageDataUrl: frame.imageDataUrl, question });
+      const req: InspectRequest = { frameId, imageDataUrl: frame.imageDataUrl, question };
+      if (opts.guideId) req.guideId = opts.guideId;
+      const res = await inspect(req);
       // 5. drop it if a newer capture started (or guiding stopped) meanwhile
       if (latestFrameId !== frameId || res.frameId !== frameId) return res;
       // 6. draw or clear the ring

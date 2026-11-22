@@ -99,10 +99,14 @@ html, body {
 .lp-btn-stop { border-color: var(--lp-error); color: var(--lp-error); font-weight: 600; }
 .lp-btn-small { font-size: 13px; padding: 6px 10px; }
 
+.lp-helper { display: flex; flex-direction: column; gap: 6px; }
+.lp-link-btn { display: block; text-align: center; text-decoration: none; }
+
 .lp-voice {
   padding: 12px 14px; border-radius: 10px; border: 1px dashed var(--lp-border);
   display: flex; flex-direction: column; gap: 6px;
 }
+.lp-voice-session { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .lp-voice-title { margin: 0; font-weight: 600; font-size: 14px; }
 .lp-muted { margin: 0; color: var(--lp-muted); font-size: 13px; }
 

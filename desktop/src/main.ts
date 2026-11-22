@@ -2,15 +2,56 @@ import { app, BrowserWindow, globalShortcut } from "electron";
 import path from "node:path";
 import fs from "node:fs";
 import { pathToFileURL } from "node:url";
-import { createControlWindow, panelUrl, registerNativeIpc } from "./control";
+import { createControlWindow, getControlWindow, panelUrl, registerNativeIpc } from "./control";
 import { createOverlay, showRings, clearRing, primaryBounds } from "./overlay";
 import type { Ring } from "./types";
 
 const DEV = process.argv.includes("--dev") || process.env.LAUNCHPAL_DEV === "1";
 
+const PROTOCOL = "launchpal";
+
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 }
+
+// launchpal://guide/<slug> (from the support page) opens the panel on that founder's guide.
+if (process.defaultApp && process.argv.length >= 2) {
+  app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [path.resolve(process.argv[1])]);
+} else {
+  app.setAsDefaultProtocolClient(PROTOCOL);
+}
+
+function guideFromDeepLink(argv: string[]): string | null {
+  const link = argv.find((a) => a.toLowerCase().startsWith(`${PROTOCOL}://`));
+  if (!link) return null;
+  const m = /^launchpal:\/\/guide\/([a-z0-9][a-z0-9-]{0,63})\/?$/i.exec(link.trim());
+  return m ? m[1].toLowerCase() : "";
+}
+
+function panelUrlForGuide(guide: string | null): string {
+  const base = panelUrl().replace(/\/+$/, "");
+  return guide ? `${base}/help/${guide}` : base;
+}
+
+let pendingGuide: string | null = guideFromDeepLink(process.argv);
+
+function openGuide(guide: string | null) {
+  const control = getControlWindow();
+  if (!control) {
+    pendingGuide = guide;
+    return;
+  }
+  if (guide !== null) void control.loadURL(panelUrlForGuide(guide));
+  if (control.isMinimized()) control.restore();
+  control.show();
+  control.focus();
+}
+
+app.on("second-instance", (_e, argv) => openGuide(guideFromDeepLink(argv)));
+app.on("open-url", (e, url) => {
+  e.preventDefault();
+  openGuide(guideFromDeepLink([url]));
+});
 
 // Alignment check: a 6%×6% box centred on the screen and tucked into each corner.
 const S = 0.06;
@@ -72,7 +113,8 @@ app.whenReady().then(() => {
   const panel = DEV && process.argv.includes("--dev-panel")
     ? pathToFileURL(path.join(__dirname, "..", "static", "devpanel.html")).href +
       (process.argv.includes("--auto") ? "#auto" : "")
-    : panelUrl();
+    : panelUrlForGuide(pendingGuide);
+  pendingGuide = null;
   const control = createControlWindow(panel);
   if (DEV) {
     control.webContents.on("console-message", (e) => {

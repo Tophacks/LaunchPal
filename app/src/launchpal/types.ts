@@ -13,7 +13,12 @@ export interface InspectRequest {
   frameId: string;
   imageDataUrl: string;
   question: string;
+  /** Optional (additive, agreed in PR #4): the published guide's slug. Absent = default guide (Acme Sync). */
+  guideId?: string;
 }
+
+/** guideId format accepted by Maritime. */
+export const GUIDE_ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
 export interface InspectResponse {
   frameId: string;

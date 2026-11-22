@@ -8,7 +8,8 @@ const MAX_DECODED_BYTES = 2 * 1024 * 1024;
 const UPSTREAM_TIMEOUT_MS = 15_000;
 const HEALTH_TIMEOUT_MS = 5_000;
 const GENERIC = "Couldn't check your screen — try again.";
-const DATA_URL_RE = /^data:image\/(jpeg|png);base64,([A-Za-z0-9+/=]+)$/;
+const GUIDE_ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
+const DATA_URL_RE =/^data:image\/(jpeg|png);base64,([A-Za-z0-9+/=]+)$/;
 
 export const inspectNamespaceMiddleware: MiddlewareConfigFn = (middlewareConfig) => {
   // ~2 MB decoded is ~2.7 MB as base64 JSON; allow headroom, reject precisely below.
@@ -34,7 +35,10 @@ function decodedSize(b64: string) {
 export const inspectProxy: InspectProxy = async (req, res) => {
   const started = Date.now();
   const body = (req.body ?? {}) as Record<string, unknown>;
-  const { frameId, imageDataUrl, question } = body;
+  const { frameId, imageDataUrl, question, guideId } = body;
+  if (guideId !== undefined && (typeof guideId !== "string" || !GUIDE_ID_RE.test(guideId))) {
+    return fail(res, 400, "invalid_request");
+  }
 
   if (typeof frameId !== "string" || !frameId || frameId.length > 200) return fail(res, 400, "invalid_request");
   if (typeof question !== "string" || !question.trim() || question.length > 1000) return fail(res, 400, "invalid_request");
@@ -53,12 +57,13 @@ export const inspectProxy: InspectProxy = async (req, res) => {
     const upstream = await fetch(`${cfg.base}/inspect`, {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${cfg.token}` },
-      body: JSON.stringify({ frameId, imageDataUrl, question }),
+      body: JSON.stringify(guideId ? { frameId, imageDataUrl, question, guideId } : { frameId, imageDataUrl, question }),
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
     const ms = Date.now() - started;
     if (!upstream.ok) {
       console.warn(`[inspect] frameId=${frameId} upstream=${upstream.status} ms=${ms}`);
+      if (upstream.status === 404 && guideId) return fail(res, 404, "guide_not_found");
       return fail(res, upstream.status === 504 ? 504 : 502, "upstream_error");
     }
     const data = (await upstream.json()) as { status?: string; frameId?: string };

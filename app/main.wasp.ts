@@ -1,4 +1,5 @@
-import { api, apiNamespace, app, page, route } from "@wasp.sh/spec";
+import { action, api, apiNamespace, app, page, route } from "@wasp.sh/spec";
+import { getElevenLabsToken } from "./src/server/elevenlabs" with { type: "ref" };
 import { ControlPanelPage } from "./src/ControlPanelPage" with { type: "ref" };
 import {
   inspectHealth,
@@ -24,5 +25,8 @@ export default app({
     apiNamespace("/api/inspect", { middlewareConfigFn: inspectNamespaceMiddleware }),
     api("GET", "/api/inspect/health", inspectHealth, { auth: false }),
     api("POST", "/api/inspect", inspectProxy, { auth: false }),
+
+    // Voice (Alisa's VoiceSession uses this): short-lived ElevenLabs conversation token.
+    action(getElevenLabsToken),
   ],
 });
