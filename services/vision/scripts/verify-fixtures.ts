@@ -71,7 +71,9 @@ const browser = await chromium.launch();
 const rows: string[] = [];
 let failures = 0;
 let qi = 0;
+const GAP = Number(process.env.VERIFY_GAP_MS ?? 0); // pause between calls to stay under OpenAI rate limits
 for (const n of names) {
+  if (GAP && qi) await new Promise((r) => setTimeout(r, GAP));
   const t0 = performance.now();
   const res = await fetch(`${base}/inspect`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${TOKEN}` }, body: JSON.stringify({ frameId: `fx-${n}`, imageDataUrl: url(n), question: QUESTIONS[qi++ % 2] }) });
   const ms = Math.round(performance.now() - t0);

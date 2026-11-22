@@ -29,6 +29,7 @@ export async function inspect(body: unknown, deps: InspectDeps): Promise<Inspect
       raw = await deps.model.inspect({ imageDataUrl, question, guide, signal });
     } catch (e) {
       if (signal.aborted) throw new HttpError(504, "upstream_timeout", "Inspection timed out. Please try again.");
+      if (e instanceof UpstreamError && e.upstreamStatus === 429) throw new HttpError(503, "upstream_rate_limited", "Vision model is rate limited. Please try again shortly.");
       if (e instanceof UpstreamError) throw new HttpError(502, "upstream_error", e.message);
       throw new HttpError(502, "upstream_error", "Inspection service failed.");
     }

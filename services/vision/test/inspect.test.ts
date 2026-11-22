@@ -89,6 +89,10 @@ describe("POST /inspect", () => {
     assert.equal((await post(ok)).status, 504);
   });
   it("502 on upstream failure", async () => { handler = async () => { throw new UpstreamError("boom"); }; assert.equal((await post(ok)).status, 502); });
+  it("503 upstream_rate_limited when OpenAI returns 429", async () => {
+    handler = async () => { throw new UpstreamError("rl", 429); };
+    const r = await post(ok); assert.equal(r.status, 503); assert.equal((await r.json()).error.code, "upstream_rate_limited");
+  });
   it("retries once on invalid model output, then 502", async () => {
     calls = 0; handler = async () => ({ ...point, target: { x: 990, y: 0, width: 50, height: 5 } });
     const r = await post(ok); assert.equal(r.status, 502); assert.equal((await r.json()).error.code, "invalid_upstream_response"); assert.equal(calls, 2);

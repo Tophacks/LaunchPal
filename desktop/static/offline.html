@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'" />
+  <title>LaunchPal</title>
+  <link rel="stylesheet" href="panel.css" />
+</head>
+<body>
+  <main class="card">
+    <h1>LaunchPal</h1>
+    <p class="status warn">Can't reach the LaunchPal service.</p>
+    <p class="muted">Check your internet connection, then try again.</p>
+    <p class="muted small" id="url"></p>
+    <button id="retry" class="primary">Try again</button>
+  </main>
+  <script src="offline.js"></script>
+</body>
+</html>

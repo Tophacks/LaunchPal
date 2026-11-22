@@ -1,0 +1,118 @@
+:root {
+  --lp-bg: #f6f5fb;
+  --lp-card: #ffffff;
+  --lp-text: #1b1030;
+  --lp-muted: #5b5470;
+  --lp-border: #dcd6ee;
+  --lp-accent: #5b2be0;
+  --lp-accent-text: #ffffff;
+  --lp-ring: #ff3d7f;
+  --lp-good: #0f7b4d;
+  --lp-good-bg: #e3f6ec;
+  --lp-warn: #8a4b00;
+  --lp-warn-bg: #fff2df;
+  --lp-error: #a11a3a;
+  --lp-error-bg: #fde8ed;
+  --lp-busy-bg: #ece9f7;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --lp-bg: #15111f;
+    --lp-card: #1f1930;
+    --lp-text: #f2effa;
+    --lp-muted: #b3abc9;
+    --lp-border: #3a3150;
+    --lp-accent: #8b66ff;
+    --lp-good: #6fe0a8;
+    --lp-good-bg: #173a2a;
+    --lp-warn: #ffc27a;
+    --lp-warn-bg: #3d2a12;
+    --lp-error: #ff8aa5;
+    --lp-error-bg: #43172a;
+    --lp-busy-bg: #2a2340;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--lp-bg);
+  color: var(--lp-text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+.lp {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lp-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.lp-brand { display: flex; gap: 10px; align-items: center; }
+.lp-logo { font-size: 26px; color: var(--lp-ring); line-height: 1; }
+.lp h1 { margin: 0; font-size: 18px; }
+.lp-sub { margin: 2px 0 0; color: var(--lp-muted); font-size: 13px; }
+.lp-badges { display: flex; gap: 4px; }
+.lp-badge {
+  font-size: 11px; padding: 2px 8px; border-radius: 999px;
+  border: 1px solid var(--lp-border); color: var(--lp-muted); text-transform: uppercase; letter-spacing: 0.04em;
+}
+.lp-badge-mock { border-color: var(--lp-warn); color: var(--lp-warn); }
+
+.lp-status {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: 10px; font-weight: 600; font-size: 15px;
+  background: var(--lp-busy-bg);
+}
+.lp-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--lp-muted); flex: none; }
+.lp-tone-busy .lp-dot { background: var(--lp-accent); animation: lp-blink 1s ease-in-out infinite; }
+.lp-tone-good { background: var(--lp-good-bg); color: var(--lp-good); }
+.lp-tone-good .lp-dot { background: var(--lp-ring); }
+.lp-tone-done { background: var(--lp-good-bg); color: var(--lp-good); }
+.lp-tone-done .lp-dot { background: var(--lp-good); }
+.lp-tone-warn { background: var(--lp-warn-bg); color: var(--lp-warn); }
+.lp-tone-warn .lp-dot { background: var(--lp-warn); }
+.lp-tone-error { background: var(--lp-error-bg); color: var(--lp-error); }
+.lp-tone-error .lp-dot { background: var(--lp-error); }
+
+.lp-instruction {
+  margin: 0; padding: 12px 14px; border-radius: 10px;
+  background: var(--lp-card); border: 1px solid var(--lp-border); font-size: 16px; line-height: 1.4;
+}
+
+.lp-actions { display: flex; flex-direction: column; gap: 8px; }
+.lp-btn {
+  font: inherit; font-size: 15px; padding: 11px 14px; border-radius: 10px;
+  border: 1px solid var(--lp-border); background: var(--lp-card); color: var(--lp-text); cursor: pointer;
+}
+.lp-btn:hover:not(:disabled) { border-color: var(--lp-accent); }
+.lp-btn:focus-visible { outline: 2px solid var(--lp-accent); outline-offset: 2px; }
+.lp-btn:disabled { opacity: 0.55; cursor: default; }
+.lp-btn-primary { background: var(--lp-accent); border-color: var(--lp-accent); color: var(--lp-accent-text); font-weight: 600; }
+.lp-btn-stop { border-color: var(--lp-error); color: var(--lp-error); font-weight: 600; }
+.lp-btn-small { font-size: 13px; padding: 6px 10px; }
+
+.lp-helper { display: flex; flex-direction: column; gap: 6px; }
+.lp-link-btn { display: block; text-align: center; text-decoration: none; }
+
+.lp-voice {
+  padding: 12px 14px; border-radius: 10px; border: 1px dashed var(--lp-border);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.lp-voice-session { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.lp-voice-title { margin: 0; font-weight: 600; font-size: 14px; }
+.lp-muted { margin: 0; color: var(--lp-muted); font-size: 13px; }
+
+.lp-dev { font-size: 13px; color: var(--lp-muted); }
+.lp-dev summary { cursor: pointer; margin-bottom: 6px; }
+.lp-dev > * + * { margin-top: 6px; }
+
+@keyframes lp-blink { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .lp-tone-busy .lp-dot { animation: none; } }
