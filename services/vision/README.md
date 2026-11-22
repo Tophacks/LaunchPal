@@ -105,3 +105,21 @@ Screenshot text is treated as evidence about the UI; the guide is the only sourc
 `guide/acme-sync.md` describes **Acme Sync**, a clearly labelled fixture product. Flow: **Connect workspace** →
 blocker dialog **Allow access** → success screen "Workspace connected" + "Sync status: Active". To use a real product, replace the guide
 and re-render/replace the fixtures; no code changes.
+
+## Live results (gpt-5.4, reasoning effort low, 1920x1080 fixtures)
+
+Real OpenAI model, in-process, 2026-11-22. IoU is the returned box vs the DOM bounding box of the intended control.
+
+| fixture | status | IoU | latency |
+|---|---|---|---|
+| start | point "Click Connect workspace." | 0.95 | 2.3-2.9 s |
+| blocked | point "Click Allow access." (not Cancel) | 0.97 | 2.7-3.1 s |
+| success | done, target null | n/a | 2.0 s |
+| loading (spinner) | unclear, target null | n/a | 8.3 s (outlier) |
+| offscreen | unclear: "drag the setup window fully onto the screen" | n/a | 2.6 s |
+| behind | unclear: "bring the setup window to the front" | n/a | 1.9 s |
+| unrelated | unclear, target null | n/a | 1.6 s |
+
+Model comparison: gpt-4.1 read the screens correctly but its boxes were off by ~5% of the screen (blocked: 642,490 vs truth 609,540 on the 1000 grid), so it is not usable for the ring. gpt-5.5 matches gpt-5.4 on accuracy but takes 4-5 s.
+
+Caveats: synthetic fixtures, not a real browser capture; single runs, not a statistical sample. The OpenAI account is on a low tier (3 requests/min, 10k tokens/min on gpt-5.4), which guided mode will exceed; the service returns 503 `upstream_rate_limited` when that happens.
