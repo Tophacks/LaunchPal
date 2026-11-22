@@ -1,7 +1,7 @@
 import { BrowserWindow, ipcMain, screen, session, shell } from "electron";
 import path from "node:path";
 import { captureFrame, captureThumb, CaptureError } from "./capture";
-import { clearRing, primaryBounds, showRing, targetToScreenRect } from "./overlay";
+import { clearRing, getCurrentRings, primaryBounds, showRing, targetToScreenRect } from "./overlay";
 import type { Target } from "./types";
 
 const W = 360;
@@ -84,7 +84,12 @@ export function registerNativeIpc() {
   ipcMain.handle("native:captureThumb", async (e) => {
     if (!isFromControl(e)) return { ok: false, code: "forbidden", message: "Not allowed." };
     try {
-      return { ok: true, thumb: await captureThumb(), exclude: controlRegion() };
+      // Ignore LaunchPal's own windows: the control panel, and the ring + label when it's visible to captures
+      // (recording mode). Padded so the label above/below the ring is covered too.
+      const exclude = [controlRegion(), ...getCurrentRings().map((r) => ({
+        x: r.target.x - 0.15, y: r.target.y - 0.06, width: r.target.width + 0.3, height: r.target.height + 0.12,
+      }))].filter((x) => x !== null);
+      return { ok: true, thumb: await captureThumb(), exclude };
     } catch (err) {
       return errorPayload(err);
     }

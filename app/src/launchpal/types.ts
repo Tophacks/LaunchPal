@@ -90,7 +90,7 @@ export interface NativeThumb {
 export interface LaunchpalNative {
   platform: string;
   captureFrame(): Promise<{ ok: true; frame: NativeFrame } | NativeFail>;
-  captureThumb(): Promise<{ ok: true; thumb: NativeThumb; exclude: Target | null } | NativeFail>;
+  captureThumb(): Promise<{ ok: true; thumb: NativeThumb; exclude: Target | Target[] | null } | NativeFail>;
   showRing(target: Target, label?: string): Promise<void>;
   clearRing(): Promise<void>;
 }

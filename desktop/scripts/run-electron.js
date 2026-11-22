@@ -6,8 +6,11 @@ const electron = require("electron"); // path to the Electron binary
 
 const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
+// --record: let screen recorders see the ring (demo videos).
+const args = process.argv.slice(2).filter((a) => a !== "--record");
+if (args.length !== process.argv.length - 2) env.LAUNCHPAL_RECORDING = "1";
 
-const child = spawn(electron, [path.join(__dirname, ".."), ...process.argv.slice(2)], {
+const child = spawn(electron, [path.join(__dirname, ".."), ...args], {
   stdio: "inherit",
   env,
 });

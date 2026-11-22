@@ -15,22 +15,20 @@ const CHANGED_FRACTION = 0.01;
  * Compares two small grayscale frames, ignoring `exclude` (the LaunchPal control window, in fractions).
  * Returns the fraction of pixels that changed.
  */
-export function changedFraction(a: Thumb, b: Thumb, exclude: Target | null): number {
+export function changedFraction(a: Thumb, b: Thumb, exclude: Target | Target[] | null): number {
   if (a.width !== b.width || a.height !== b.height) return 1;
   const { width: w, height: h } = a;
-  let ex0 = -1, ex1 = -1, ey0 = -1, ey1 = -1;
-  if (exclude) {
-    ex0 = Math.floor(exclude.x * w) - 1;
-    ex1 = Math.ceil((exclude.x + exclude.width) * w) + 1;
-    ey0 = Math.floor(exclude.y * h) - 1;
-    ey1 = Math.ceil((exclude.y + exclude.height) * h) + 1;
-  }
+  const boxes = (Array.isArray(exclude) ? exclude : exclude ? [exclude] : []).map((e) => ({
+    x0: Math.floor(e.x * w) - 1,
+    x1: Math.ceil((e.x + e.width) * w) + 1,
+    y0: Math.floor(e.y * h) - 1,
+    y1: Math.ceil((e.y + e.height) * h) + 1,
+  }));
   let changed = 0;
   let counted = 0;
   for (let y = 0; y < h; y++) {
-    const rowExcluded = y >= ey0 && y < ey1;
     for (let x = 0; x < w; x++) {
-      if (rowExcluded && x >= ex0 && x < ex1) continue;
+      if (boxes.some((r) => x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1)) continue;
       const i = y * w + x;
       counted++;
       if (Math.abs(a.gray[i] - b.gray[i]) > PIXEL_DELTA) changed++;
@@ -39,7 +37,7 @@ export function changedFraction(a: Thumb, b: Thumb, exclude: Target | null): num
   return counted ? changed / counted : 0;
 }
 
-export function hasChanged(a: Thumb, b: Thumb, exclude: Target | null): boolean {
+export function hasChanged(a: Thumb, b: Thumb, exclude: Target | Target[] | null): boolean {
   return changedFraction(a, b, exclude) > CHANGED_FRACTION;
 }
 
