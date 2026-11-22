@@ -1,0 +1,12 @@
+# Root-context builds only need services/vision/{package*.json,tsconfig.json,src,guide}
+.git
+desktop
+app
+docs
+scripts
+**/node_modules
+**/dist
+**/.env
+services/vision/fixtures
+services/vision/test
+services/vision/scripts

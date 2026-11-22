@@ -38,7 +38,7 @@ Note for the agent sandbox only: Node's `fetch` ignores the proxy there, so run 
 
 Wasp proxy mapping: proxy `MARITIME_INSPECT_URL` = this service's base URL, proxy `MARITIME_TOKEN` = this service's `INSPECT_BEARER_TOKEN` (same value).
 
-Docker: `docker build -t launchpal-vision services/vision` (context is `services/vision`).
+Docker: from `services/vision`: `docker build -t launchpal-vision .` Or from the repo root (what Maritime builds): `docker build -t launchpal-vision .` using the root `Dockerfile`/`.dockerignore`, which copy only `services/vision/{package*.json,tsconfig.json,src,guide}`.
 
 ## Sample request
 
