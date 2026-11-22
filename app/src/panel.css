@@ -54,6 +54,64 @@ html, body {
   gap: 12px;
 }
 
+.lp-stack { display: flex; flex-direction: column; gap: 12px; }
+
+/* Browser fallback: controls + live preview side by side (stacked on narrow screens). */
+.lp.lp-browser {
+  max-width: 1280px;
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) 1fr;
+  align-items: start;
+  gap: 20px;
+}
+.lp-col { display: flex; flex-direction: column; gap: 12px; }
+@media (max-width: 820px) {
+  .lp.lp-browser { grid-template-columns: 1fr; }
+}
+
+.lp-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background: #0d0a14;
+  border-radius: 12px;
+  border: 1px solid var(--lp-border);
+  overflow: hidden;
+}
+.lp-preview-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.lp-preview-empty {
+  position: absolute; inset: 0; margin: 0; display: grid; place-items: center;
+  padding: 24px; text-align: center; color: #b3abc9; font-size: 14px;
+}
+.lp-preview-ring {
+  position: absolute;
+  border: 3px solid var(--lp-ring);
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 0 6px rgba(255, 61, 127, 0.25);
+  animation: lp-pulse 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.lp-preview-label {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #1b1030;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--lp-ring);
+}
+.lp-preview-label.above { bottom: calc(100% + 6px); }
+.lp-preview-label.below { top: calc(100% + 6px); }
+@keyframes lp-pulse { 50% { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 0 10px rgba(255, 61, 127, 0.12); } }
+@media (prefers-reduced-motion: reduce) { .lp-preview-ring { animation: none; } }
+
 .lp-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
 .lp-brand { display: flex; gap: 10px; align-items: center; }
 .lp-logo { font-size: 26px; color: var(--lp-ring); line-height: 1; }

@@ -53,6 +53,7 @@ function newFrameId() {
 
 export function createLaunchpal(opts: LaunchpalOptions): LaunchpalApi & {
   getStatus(): LaunchpalStatus;
+  stopWithMessage(text: string): void;
 } {
   const { adapter, inspect } = opts;
 
@@ -263,5 +264,10 @@ export function createLaunchpal(opts: LaunchpalOptions): LaunchpalApi & {
       return guided;
     },
     getStatus: () => status,
+    /** Stop guiding and show a message in the status strip (e.g. screen sharing ended). */
+    stopWithMessage(text: string) {
+      stopGuided(false);
+      setStatus({ kind: "error", text, instruction: undefined });
+    },
   };
 }

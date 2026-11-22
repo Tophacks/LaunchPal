@@ -5,7 +5,7 @@ import { clearRing, primaryBounds, showRing, targetToScreenRect } from "./overla
 import type { Target } from "./types";
 
 const W = 360;
-const H = 480;
+const H = 560;
 const MARGIN = 16;
 type Corner = "bottom-right" | "bottom-left" | "top-right" | "top-left";
 

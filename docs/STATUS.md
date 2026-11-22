@@ -1,5 +1,5 @@
 # Status (one line per owner; update yours on every commit)
 
-- fe: Desktop ring + capture + guided mode + Wasp panel/proxy work with mocks; guideId, launchpal:// deep link and voice mount (VoiceSession stub for Alisa) added. Next: real vision when Maritime is up, browser fallback, deploy.
-- vision (Nate): Live gpt-5.4 verified 35/35 (IoU mean 0.95, p50 2.2 s). First Maritime deploy FAILED at 'Build image'; added a repo-root Dockerfile (my guess: Maritime builds from repo root) - need the top of the build log to confirm. Next: retry deploy, share endpoint URL.
+- fe: Real vision works end to end (desktop ring) + browser fallback (preview ring) works. Next: deploy Wasp app + npm run demo once Maritime URL is ready.
+- vision (Nate): Live gpt-5.4 verified 35/35 on full-screen fixtures (IoU mean 0.95, p50 2.2 s, p90 2.9 s); root Dockerfile merged (PR #8). Maritime deploy still failing at 'Build image' - need top of build log; fallback: any container host (Render) using the same root Dockerfile. Next: working public URL, then founder admin.
 - voice: not started.

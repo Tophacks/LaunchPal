@@ -3,6 +3,8 @@ import { useParams } from "react-router";
 import { mockNextUnclear } from "./launchpal/mock";
 import { getLaunchpal, getStatus, guideIdFromLocation, MOCK_INSPECT, subscribeStatus } from "./launchpal/setup";
 import { QUESTION_ASK, STEP_EVENT, type InspectResponse, type StatusKind } from "./launchpal/types";
+import { stopSharing } from "./launchpal/browserAdapter";
+import { ScreenPreview } from "./launchpal/ScreenPreview";
 import { VoiceSession } from "./voice/VoiceSession";
 import "./panel.css";
 
@@ -58,8 +60,13 @@ export function ControlPanelPage() {
   const busy = status.kind === "looking" || asking;
   const showInstruction = status.instruction && (status.kind === "point" || status.kind === "unclear" || status.kind === "done");
 
-  return (
-    <main className="lp">
+  function stop() {
+    lp.stopGuided();
+    if (lp.mode === "browser") stopSharing(); // stop means stop looking at the screen
+  }
+
+  const controls = (
+    <div className="lp-stack">
       <header className="lp-head">
         <div className="lp-brand">
           <span className="lp-logo" aria-hidden>◎</span>
@@ -81,20 +88,9 @@ export function ControlPanelPage() {
 
       {showInstruction && <p className="lp-instruction">{status.instruction}</p>}
 
-      {lp.mode === "browser" && (
-        <section className="lp-helper">
-          <a className="lp-btn lp-btn-primary lp-link-btn" href={`launchpal://guide/${guideId ?? "acme-sync"}`}>
-            Open LaunchPal helper
-          </a>
-          <p className="lp-muted">
-            The helper highlights the next button right on your screen. Already open? It will switch to this guide.
-          </p>
-        </section>
-      )}
-
       <div className="lp-actions">
         {status.guided ? (
-          <button className="lp-btn lp-btn-stop" onClick={() => lp.stopGuided()}>
+          <button className="lp-btn lp-btn-stop" onClick={stop}>
             Stop
           </button>
         ) : (
@@ -134,6 +130,23 @@ export function ControlPanelPage() {
           )}
         </details>
       )}
+    </div>
+  );
+
+  if (lp.mode !== "browser") return <main className="lp">{controls}</main>;
+
+  return (
+    <main className="lp lp-browser">
+      <div className="lp-col">
+        {controls}
+        <section className="lp-helper">
+          <p className="lp-muted">Want the highlight right on your screen instead of in this preview?</p>
+          <a className="lp-btn lp-link-btn" href={`launchpal://guide/${guideId ?? "acme-sync"}`}>
+            Open LaunchPal helper
+          </a>
+        </section>
+      </div>
+      <ScreenPreview />
     </main>
   );
 }

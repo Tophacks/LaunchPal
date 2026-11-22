@@ -91,20 +91,10 @@ function openFixtureWindow(files: string[]) {
   });
   win.setBounds(b);
   // Fake installer: each click advances to the next screenshot (e.g. start → blocked → success).
-  const imgs = files
-    .map((f, i) => {
-      const src = "data:image/png;base64," + fs.readFileSync(path.resolve(f)).toString("base64");
-      return `<img src="${src}" style="width:100vw;height:100vh;object-fit:fill;display:${i ? "none" : "block"}">`;
-    })
-    .join("");
-  const script =
-    "let i=0;const im=[...document.images];window.nextFixture=()=>{im[i].style.display='none';i=Math.min(i+1,im.length-1);im[i].style.display='block'};document.body.onclick=window.nextFixture;";
-  win.loadURL(
-    "data:text/html," +
-      encodeURIComponent(
-        `<body style="margin:0;overflow:hidden;background:#000;cursor:pointer">${imgs}<script>${script}</script></body>`,
-      ),
-  );
+  const urls = files.filter((f) => fs.existsSync(path.resolve(f))).map((f) => pathToFileURL(path.resolve(f)).href);
+  void win.loadFile(path.join(__dirname, "..", "static", "fixture.html"), {
+    query: { files: JSON.stringify(urls) },
+  });
 }
 
 app.whenReady().then(() => {
