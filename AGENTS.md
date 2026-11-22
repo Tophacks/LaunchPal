@@ -11,13 +11,13 @@ Fallback: if the desktop helper fails, the same Wasp app runs in a browser with 
 | Role | Owns | First handoff |
 | --- | --- | --- |
 | Frontend and integration | Electron desktop helper (automatic capture, click-through on-screen overlay, guided mode), Wasp/React control panel, browser fallback, and the Wasp server proxy. Owns final integration. | Draw a ring on the real screen from a mock response, and expose `window.launchpal` (inspection + step events) to the voice teammate. |
-| Maritime and vision (Nate) | Node/TypeScript inspection service, founder setup guide, screenshot fixtures, and Maritime deployment. | Share the endpoint, required environment variable names, and sample results for the starting, blocked, and success screens. |
+| Founder admin, Maritime and vision (Nate) | Protected founder admin page, guide upload, preview, publishing and support links. Also owns the inspection service, fixtures and Maritime deployment. | Share the published-guide lookup and support link with frontend. Share the inspection endpoint, environment variable names, and sample results for the starting, blocked, and success screens. |
 | ElevenLabs and demo (Alisa)| Voice agent configuration, `inspect_screen` client tool, speaking guided-mode step events, volunteer test, and demo recording. | Get "Where do I click?" to call the tool and speak a mock instruction, and speak a mock `launchpal:step` event unprompted. |
 
 ## Working together
 
 - Read this file, `docs/STATUS.md`, the newest 5 notes in `docs/handoff/`, and open PRs before editing. Claim one role and work on a feature branch or worktree scoped to it.
-- Build against the contract below with mocks while other components are in progress. Keep ownership of shared Wasp entry points and the Electron app with the frontend owner. The voice owner builds the voice adapter in its own file and coordinates its registration with frontend.
+- Build against the contract below with mocks while other components are in progress. Keep ownership of shared Wasp entry points and the Electron app with the frontend owner. Nate owns founder admin code and coordinates shared Wasp route, auth, and proxy edits with frontend. Frontend owns the customer support UI, which uses the published guide without customer login. The voice owner builds the voice adapter in its own file and coordinates its registration with frontend.
 - Flag any change to the contract, shared files, or demo flow to affected owners in the PR before changing it. Contract changes are additive only (no renames or removals) unless all three owners agree. Keep one agreed demo flow and reuse its fixtures across branches.
 - Merge small PRs into `main` often (at least every hour) so the others can integrate.
 
