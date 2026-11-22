@@ -56,6 +56,26 @@ html, body {
 
 .lp-stack { display: flex; flex-direction: column; gap: 12px; }
 
+/* Founder screen */
+.lp.lp-founder { max-width: 760px; padding: 24px 16px; }
+.lp-card {
+  display: flex; flex-direction: column; gap: 10px; padding: 16px;
+  border-radius: 12px; background: var(--lp-card); border: 1px solid var(--lp-border);
+}
+.lp-label { margin: 0; font-weight: 600; font-size: 14px; }
+.lp-input, .lp-textarea {
+  font: inherit; font-size: 14px; color: var(--lp-text); background: var(--lp-bg);
+  border: 1px solid var(--lp-border); border-radius: 8px; padding: 10px 12px; width: 100%;
+}
+.lp-textarea { min-height: 280px; resize: vertical; font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+.lp-input:focus-visible, .lp-textarea:focus-visible { outline: 2px solid var(--lp-accent); outline-offset: 1px; }
+.lp-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lp-row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.lp-file { position: relative; overflow: hidden; }
+.lp-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.lp-linkrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.lp-code { flex: 1; min-width: 0; overflow-wrap: anywhere; padding: 8px 10px; border-radius: 8px; background: var(--lp-bg); border: 1px solid var(--lp-border); font-size: 13px; }
+
 /* Browser fallback: controls + live preview side by side (stacked on narrow screens). */
 .lp.lp-browser {
   max-width: 1280px;
