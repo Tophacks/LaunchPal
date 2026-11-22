@@ -108,18 +108,22 @@ and re-render/replace the fixtures; no code changes.
 
 ## Live results (gpt-5.4, reasoning effort low, 1920x1080 fixtures)
 
-Real OpenAI model, in-process, 2026-11-22. IoU is the returned box vs the DOM bounding box of the intended control.
+Real OpenAI model, in-process, production defaults (12 s timeout), 2026-11-22. IoU is the returned box vs the DOM bounding box of the intended control.
 
-| fixture | status | IoU | latency |
-|---|---|---|---|
-| start | point "Click Connect workspace." | 0.95 | 2.3-2.9 s |
-| blocked | point "Click Allow access." (not Cancel) | 0.97 | 2.7-3.1 s |
-| success | done, target null | n/a | 2.0 s |
-| loading (spinner) | unclear, target null | n/a | 8.3 s (outlier) |
-| offscreen | unclear: "drag the setup window fully onto the screen" | n/a | 2.6 s |
-| behind | unclear: "bring the setup window to the front" | n/a | 1.9 s |
-| unrelated | unclear, target null | n/a | 1.6 s |
+**Repeated run: 7 fixtures x 5 runs = 35 calls (alternating both helper questions): 35/35 returned the expected status.** Box IoU: mean 0.95, min 0.92. Latency: p50 2.2 s, p90 2.9 s, max 3.1 s.
+
+| fixture | expected | result |
+|---|---|---|
+| start | point | "Click Connect workspace." |
+| blocked | point | "Click Allow access." (never Cancel) |
+| success | done, target null | "Setup is complete." |
+| loading (spinner) | unclear | "Please wait for Acme Sync to finish connecting." |
+| offscreen | unclear | "Please drag the Acme Sync setup window fully onto the screen." |
+| behind | unclear | "Please bring the Acme Sync setup window to the front." |
+| unrelated | unclear | "Please bring the Acme Sync setup window to the front." |
+
+The original 1280x800 window set also passes live (6/6, single run, includes `cropped` -> "Please show the whole Acme Sync setup window.").
 
 Model comparison: gpt-4.1 read the screens correctly but its boxes were off by ~5% of the screen (blocked: 642,490 vs truth 609,540 on the 1000 grid), so it is not usable for the ring. gpt-5.5 matches gpt-5.4 on accuracy but takes 4-5 s.
 
-Caveats: synthetic fixtures, not a real browser capture; single runs, not a statistical sample. The OpenAI account is on a low tier (3 requests/min, 10k tokens/min on gpt-5.4), which guided mode will exceed; the service returns 503 `upstream_rate_limited` when that happens.
+Caveats: synthetic fixtures (one product, rendered by Chromium), not a real browser capture, so real-capture latency over a network from the helper is unmeasured; latency is service-to-OpenAI only. On the account's earlier free tier (3 req/min) calls were rate limited; after billing the limits are 5000 req/min and 1M tokens/min.
