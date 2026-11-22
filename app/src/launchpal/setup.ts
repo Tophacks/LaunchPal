@@ -1,6 +1,6 @@
 // Creates the window.launchpal singleton and a tiny status store for React.
 import { api } from "wasp/client/api";
-import { createBrowserAdapter } from "./browserAdapter";
+import { createBrowserAdapter, onShareEnded, SHARE_ENDED } from "./browserAdapter";
 import { createDesktopAdapter } from "./desktopAdapter";
 import { CLIENT_TIMEOUT_MS, LaunchpalError, makeProxyInspect } from "./inspectClient";
 import { createLaunchpal } from "./launchpal";
@@ -48,8 +48,10 @@ let instance: Instance | null = null;
 /** The single LaunchPal instance; also installed as window.launchpal. */
 export function getLaunchpal(): Instance {
   if (!instance) {
-    instance = build();
-    window.launchpal = instance;
+    const lp = build();
+    instance = lp;
+    window.launchpal = lp;
+    if (lp.mode === "browser") onShareEnded(() => lp.stopWithMessage(SHARE_ENDED));
   }
   return instance;
 }
