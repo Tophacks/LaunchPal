@@ -6,8 +6,8 @@ LaunchPal helps software founders onboard customers. A customer shares a setup w
 
 | Role | Owns | First handoff |
 | --- | --- | --- |
-| Frontend and integration (Nate) | Wasp/React screen sharing, frame capture, preview overlay, and Wasp server proxy. Owns final integration. | Render a highlight from a mock response and expose the browser inspection function to the voice teammate. |
-| Maritime and vision | Node/TypeScript inspection service, founder setup guide, screenshot fixtures, and Maritime deployment. | Share the endpoint, required environment variable names, and sample results for the starting, blocked, and success screens. |
+| Frontend and integration | Wasp/React screen sharing, frame capture, preview overlay, and Wasp server proxy. Owns final integration. | Render a highlight from a mock response and expose the browser inspection function to the voice teammate. |
+| Maritime and vision (Nate) | Node/TypeScript inspection service, founder setup guide, screenshot fixtures, and Maritime deployment. | Share the endpoint, required environment variable names, and sample results for the starting, blocked, and success screens. |
 | ElevenLabs and demo | Voice agent configuration, `inspect_screen` client tool, volunteer test, and demo recording. | Get “Where do I click?” to call the tool and speak a mock instruction. |
 
 ## Working together
