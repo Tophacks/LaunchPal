@@ -1,0 +1,14 @@
+/* OWNER: Alisa (voice). Styles for VoiceSession only; colours come from panel.css variables. */
+.lp-voice-state { margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+.lp-voice-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lp-muted); flex: none; }
+.lp-voice-connecting .lp-voice-dot { background: var(--lp-accent); animation: lp-blink 1s ease-in-out infinite; }
+.lp-voice-listening .lp-voice-dot { background: var(--lp-good); }
+.lp-voice-speaking .lp-voice-dot { background: var(--lp-ring); animation: lp-blink 1s ease-in-out infinite; }
+.lp-voice-error { color: var(--lp-error); }
+.lp-voice-error .lp-voice-dot { background: var(--lp-error); }
+.lp-voice-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-voice-connecting .lp-voice-dot,
+  .lp-voice-speaking .lp-voice-dot { animation: none; }
+}
