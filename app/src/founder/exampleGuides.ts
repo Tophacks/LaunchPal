@@ -8,8 +8,11 @@ The version number on screen may differ (for example 3.15.2). Labels below are e
 ## Screens and controls
 
 ### 1. python.org download page (in a web browser)
-- Visible: the python.org website, heading "Download the latest version for Windows", a yellow button "Download Python 3.x.x".
-- Next step: click the yellow **Download Python 3.x.x** button. Do NOT point at "Download Python install manager" or at other operating systems.
+- Visible: the python.org website, heading "Download the latest version for Windows", a yellow button "Download Python install manager",
+  and below it the line "Or get the standalone installer for Python 3.x.x" where "Python 3.x.x" is a small yellow link.
+- This guide uses the standalone installer. Next step: click the small link **Python 3.x.x** in "Or get the standalone installer for Python 3.x.x"
+  (point at that link only, e.g. "Click Python 3.15.2 under the yellow button.").
+- Do NOT point at the big yellow "Download Python install manager" button, at "Pre-releases", or at other operating systems.
 
 ### 2. Download finished (in the web browser)
 - Visible: the browser's downloads list or download bubble showing "python-3.x.x-amd64.exe".
