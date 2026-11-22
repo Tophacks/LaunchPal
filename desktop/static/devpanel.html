@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src data:" />
+  <title>LaunchPal dev panel</title>
+  <link rel="stylesheet" href="panel.css" />
+</head>
+<body>
+  <main class="card">
+    <h1>Dev panel</h1>
+    <p class="status" id="status">Ready</p>
+    <button id="capture" class="primary">Capture screen</button>
+    <button id="ring">Mock ring (Connect workspace)</button>
+    <button id="thumb">Change-detect thumb</button>
+    <button id="clear">Clear ring</button>
+    <pre id="info"></pre>
+    <img id="preview" class="preview" alt="" hidden />
+  </main>
+  <script src="devpanel.js"></script>
+</body>
+</html>

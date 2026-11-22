@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "npm run build && node scripts/run-electron.js",
     "dev": "npm run build && node scripts/run-electron.js --dev",
-    "test-rings": "npm run build && node scripts/run-electron.js --dev --test-rings"
+    "dev-panel": "npm run build && node scripts/run-electron.js --dev --dev-panel",
+    "test-rings":"npm run build && node scripts/run-electron.js --dev --test-rings"
   },
   "devDependencies": {
     "electron": "45.4.1",

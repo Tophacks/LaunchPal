@@ -1,6 +1,8 @@
 import { app, BrowserWindow, globalShortcut } from "electron";
 import path from "node:path";
 import fs from "node:fs";
+import { pathToFileURL } from "node:url";
+import { createControlWindow, panelUrl, registerNativeIpc } from "./control";
 import { createOverlay, showRings, clearRing, primaryBounds } from "./overlay";
 import type { Ring } from "./types";
 
@@ -59,6 +61,18 @@ function openFixtureWindow(file: string) {
 
 app.whenReady().then(() => {
   const overlay = createOverlay();
+  registerNativeIpc();
+  const panel = DEV && process.argv.includes("--dev-panel")
+    ? pathToFileURL(path.join(__dirname, "..", "static", "devpanel.html")).href +
+      (process.argv.includes("--auto") ? "#auto" : "")
+    : panelUrl();
+  const control = createControlWindow(panel);
+  if (DEV) {
+    control.webContents.on("console-message", (e) => {
+      if (e.message.startsWith("[devpanel]")) console.log(e.message);
+    });
+  }
+  control.on("closed", () => app.quit());
   if (DEV) {
     registerDevShortcuts();
     const fixtureIdx = process.argv.indexOf("--fixture");
