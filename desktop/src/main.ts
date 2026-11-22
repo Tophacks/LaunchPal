@@ -1,14 +1,57 @@
 import { app, BrowserWindow, globalShortcut } from "electron";
 import path from "node:path";
 import fs from "node:fs";
+import { pathToFileURL } from "node:url";
+import { createControlWindow, getControlWindow, panelUrl, registerNativeIpc } from "./control";
 import { createOverlay, showRings, clearRing, primaryBounds } from "./overlay";
 import type { Ring } from "./types";
 
 const DEV = process.argv.includes("--dev") || process.env.LAUNCHPAL_DEV === "1";
 
+const PROTOCOL = "launchpal";
+
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 }
+
+// launchpal://guide/<slug> (from the support page) opens the panel on that founder's guide.
+if (process.defaultApp && process.argv.length >= 2) {
+  app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [path.resolve(process.argv[1])]);
+} else {
+  app.setAsDefaultProtocolClient(PROTOCOL);
+}
+
+function guideFromDeepLink(argv: string[]): string | null {
+  const link = argv.find((a) => a.toLowerCase().startsWith(`${PROTOCOL}://`));
+  if (!link) return null;
+  const m = /^launchpal:\/\/guide\/([a-z0-9][a-z0-9-]{0,63})\/?$/i.exec(link.trim());
+  return m ? m[1].toLowerCase() : "";
+}
+
+function panelUrlForGuide(guide: string | null): string {
+  const base = panelUrl().replace(/\/+$/, "");
+  return guide ? `${base}/help/${guide}` : base;
+}
+
+let pendingGuide: string | null = guideFromDeepLink(process.argv);
+
+function openGuide(guide: string | null) {
+  const control = getControlWindow();
+  if (!control) {
+    pendingGuide = guide;
+    return;
+  }
+  if (guide !== null) void control.loadURL(panelUrlForGuide(guide));
+  if (control.isMinimized()) control.restore();
+  control.show();
+  control.focus();
+}
+
+app.on("second-instance", (_e, argv) => openGuide(guideFromDeepLink(argv)));
+app.on("open-url", (e, url) => {
+  e.preventDefault();
+  openGuide(guideFromDeepLink([url]));
+});
 
 // Alignment check: a 6%×6% box centred on the screen and tucked into each corner.
 const S = 0.06;
@@ -37,7 +80,7 @@ function registerDevShortcuts() {
  * Dev only: `--fixture <png>` shows a screenshot fixture stretched over the whole primary display,
  * so fractional targets from services/vision samples land on the real control (alignment check).
  */
-function openFixtureWindow(file: string) {
+function openFixtureWindow(files: string[]) {
   const b = primaryBounds();
   const win = new BrowserWindow({
     ...b,
@@ -46,23 +89,46 @@ function openFixtureWindow(file: string) {
     backgroundColor: "#000000",
     webPreferences: { sandbox: true, contextIsolation: true },
   });
-  win.setAlwaysOnTop(true, "floating");
   win.setBounds(b);
-  const src = "data:image/png;base64," + fs.readFileSync(path.resolve(file)).toString("base64");
+  // Fake installer: each click advances to the next screenshot (e.g. start → blocked → success).
+  const imgs = files
+    .map((f, i) => {
+      const src = "data:image/png;base64," + fs.readFileSync(path.resolve(f)).toString("base64");
+      return `<img src="${src}" style="width:100vw;height:100vh;object-fit:fill;display:${i ? "none" : "block"}">`;
+    })
+    .join("");
+  const script =
+    "let i=0;const im=[...document.images];window.nextFixture=()=>{im[i].style.display='none';i=Math.min(i+1,im.length-1);im[i].style.display='block'};document.body.onclick=window.nextFixture;";
   win.loadURL(
     "data:text/html," +
       encodeURIComponent(
-        `<body style="margin:0;overflow:hidden;background:#000"><img src="${src}" style="width:100vw;height:100vh;object-fit:fill;display:block"></body>`,
+        `<body style="margin:0;overflow:hidden;background:#000;cursor:pointer">${imgs}<script>${script}</script></body>`,
       ),
   );
 }
 
 app.whenReady().then(() => {
   const overlay = createOverlay();
+  registerNativeIpc();
+  const panel = DEV && process.argv.includes("--dev-panel")
+    ? pathToFileURL(path.join(__dirname, "..", "static", "devpanel.html")).href +
+      (process.argv.includes("--auto") ? "#auto" : "")
+    : panelUrlForGuide(pendingGuide);
+  pendingGuide = null;
+  const control = createControlWindow(panel);
+  if (DEV) {
+    control.webContents.on("console-message", (e) => {
+      if (e.message.startsWith("[devpanel]")) console.log(e.message);
+    });
+  }
+  control.on("closed", () => app.quit());
   if (DEV) {
     registerDevShortcuts();
     const fixtureIdx = process.argv.indexOf("--fixture");
-    if (fixtureIdx > 0 && process.argv[fixtureIdx + 1]) openFixtureWindow(process.argv[fixtureIdx + 1]);
+    if (fixtureIdx > 0 && process.argv[fixtureIdx + 1]) {
+      openFixtureWindow(process.argv[fixtureIdx + 1].split(","));
+      control.moveTop();
+    }
     if (process.argv.includes("--test-rings")) void showRings(TEST_RINGS);
     if (process.argv.includes("--mock-ring")) void showRings([MOCK_RING]);
     overlay.once("show", () =>
