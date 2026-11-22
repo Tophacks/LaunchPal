@@ -1,5 +1,5 @@
-// Mock inspection (VITE_MOCK_INSPECT=true). Scripted Acme Sync flow from services/vision/README.md samples,
-// so every branch builds against the same agreed demo flow. Echoes the request frameId.
+// Mock inspection (REACT_APP_MOCK_INSPECT=true). Scripted Acme Sync flow matching the full-screen fixtures in
+// services/vision/fixtures/screen/ (targets = real gpt-5.4 answers on those frames). Echoes the request frameId.
 import type { InspectRequest, InspectResponse } from "./types";
 
 type Scripted = Omit<InspectResponse, "frameId">;
@@ -8,12 +8,12 @@ export const MOCK_SEQUENCE: Scripted[] = [
   {
     status: "point",
     instruction: "Click Connect workspace.",
-    target: { x: 0.552, y: 0.266, width: 0.135, height: 0.053 },
+    target: { x: 0.532, y: 0.319, width: 0.091, height: 0.039 },
   },
   {
     status: "point",
     instruction: "Click Allow access.",
-    target: { x: 0.667, y: 0.562, width: 0.1, height: 0.053 },
+    target: { x: 0.609, y: 0.54, width: 0.067, height: 0.04 },
   },
   { status: "done", instruction: "Your workspace is connected.", target: null },
 ];
