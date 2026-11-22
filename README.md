@@ -10,6 +10,17 @@ git config core.hooksPath scripts/githooks
 
 This installs the pre-commit hook that rejects commits without a new `docs/handoff/*.md` note.
 
+## Desktop helper (Electron, `desktop/`)
+
+```bash
+cd desktop
+npm install
+npm run test-rings   # rings at the centre and corners of the primary screen
+npm run dev          # dev shortcuts: Ctrl+Alt+Shift+R test rings, +M mock ring, +C clear, +Q quit
+```
+
+The overlay is click-through and excluded from screen captures. Always launch through the npm scripts (`scripts/run-electron.js`), because terminals inside VS Code inherit `ELECTRON_RUN_AS_NODE`.
+
 ## Layout
 
 - `services/vision/` — Maritime inspection service (Nate)
